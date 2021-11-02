@@ -274,7 +274,8 @@ static void stabilizerTask(void* param)
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
-        powerDistribution(&control);
+        // powerDistribution(&control);
+        directPowerControl(&control);
       }
 
       // Log data to uSD card if configured

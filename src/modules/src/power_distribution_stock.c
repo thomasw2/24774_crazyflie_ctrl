@@ -86,6 +86,7 @@ void powerDistribution(const control_t *control)
   #ifdef QUAD_FORMATION_X
     int16_t r = control->roll / 2.0f;
     int16_t p = control->pitch / 2.0f;
+    //TODO: Findout why this works
     motorPower.m1 = limitThrust(control->thrust - r + p + control->yaw);
     motorPower.m2 = limitThrust(control->thrust - r - p - control->yaw);
     motorPower.m3 =  limitThrust(control->thrust + r - p + control->yaw);
@@ -128,6 +129,14 @@ void powerDistribution(const control_t *control)
     motorsSetRatio(MOTOR_M3, motorPower.m3);
     motorsSetRatio(MOTOR_M4, motorPower.m4);
   }
+}
+
+void directPowerControl(const control_t *control)
+{
+    motorsSetRatio(MOTOR_M1, 1000);
+    motorsSetRatio(MOTOR_M2, 1000);
+    motorsSetRatio(MOTOR_M3, 1000);
+    motorsSetRatio(MOTOR_M4, 1000);
 }
 
 /**

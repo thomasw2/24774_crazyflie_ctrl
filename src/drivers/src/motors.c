@@ -303,7 +303,7 @@ bool motorsTest(void)
   return isInit;
 }
 
-// Ithrust is thrust mapped for 65536 <==> 60 grams
+//NOTE: IMPORTANT Ithrust is thrust mapped for 65536 <==> 60 grams
 void motorsSetRatio(uint32_t id, uint16_t ithrust)
 {
   if (isInit) {
