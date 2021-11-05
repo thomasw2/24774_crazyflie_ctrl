@@ -129,12 +129,19 @@ static void mrTask(void *param)
     while (1)
     {
         vTaskDelayUntil(&lastWakeTime, M2T(100));
+		double front = mrGetMeasurementAndRestart(&devFront)/1000.0f;
+		double back = mrGetMeasurementAndRestart(&devBack)/1000.0f;
+		double up = mrGetMeasurementAndRestart(&devUp)/1000.0f;
+		double left = mrGetMeasurementAndRestart(&devLeft)/1000.0f;
+		double right = mrGetMeasurementAndRestart(&devRight)/1000.0f;
 
-        rangeSet(rangeFront, mrGetMeasurementAndRestart(&devFront)/1000.0f);
-        rangeSet(rangeBack, mrGetMeasurementAndRestart(&devBack)/1000.0f);
-        rangeSet(rangeUp, mrGetMeasurementAndRestart(&devUp)/1000.0f);
-        rangeSet(rangeLeft, mrGetMeasurementAndRestart(&devLeft)/1000.0f);
-        rangeSet(rangeRight, mrGetMeasurementAndRestart(&devRight)/1000.0f);
+		//DEBUG_PRINT("ranges %f %f %f %f %f \n", front,back,up,left,right);
+	DEBUG_PRINT("ranges l:%f r:%f u:%f\n", left, right,up);
+        rangeSet(rangeFront, front);
+        rangeSet(rangeBack, back);
+        rangeSet(rangeUp, up);
+        rangeSet(rangeLeft, left);
+        rangeSet(rangeRight, right);
     }
 }
 
