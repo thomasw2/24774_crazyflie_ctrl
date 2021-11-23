@@ -3,8 +3,8 @@
 # This Makefile compiles all the object file to ./bin/ and the resulting firmware
 # image in ./cfX.elf and ./cfX.bin
 
-CRAZYFLIE_BASE ?= ./
 
+CRAZYFLIE_BASE ?= ./
 # Put your personal build config in tools/make/config.mk and DO NOT COMMIT IT!
 # Make a copy of tools/make/config.mk.example to get you started
 -include tools/make/config.mk
@@ -119,10 +119,12 @@ endif
 ifdef APP_PRIORITY
 CFLAGS += -DAPP_PRIORITY=$(APP_PRIORITY)
 endif
+CXX=g++ 
 
 # Crazyflie sources
 VPATH += $(CRAZYFLIE_BASE)/src/init $(CRAZYFLIE_BASE)/src/hal/src $(CRAZYFLIE_BASE)/src/modules/src $(CRAZYFLIE_BASE)/src/modules/src/lighthouse $(CRAZYFLIE_BASE)/src/modules/src/kalman_core $(CRAZYFLIE_BASE)/src/utils/src $(CRAZYFLIE_BASE)/src/drivers/bosch/src $(CRAZYFLIE_BASE)/src/drivers/src $(CRAZYFLIE_BASE)/src/platform
 VPATH += $(CRAZYFLIE_BASE)/src/utils/src/kve
+
 
 ############### Source files configuration ################
 
@@ -171,7 +173,8 @@ PROJ_OBJ += crtp_commander_generic.o crtp_localization_service.o peer_localizati
 PROJ_OBJ += attitude_pid_controller.o sensfusion6.o stabilizer.o
 PROJ_OBJ += position_estimator_altitude.o position_controller_pid.o position_controller_indi.o
 PROJ_OBJ += estimator.o estimator_complementary.o
-PROJ_OBJ += controller.o controller_pid.o controller_mellinger.o controller_indi.o
+PROJ_OBJ += controller.o controller_pid.o controller_mellinger.o controller_indi.o controller_lqr.o 
+#add lqr ARE solver
 PROJ_OBJ += power_distribution_$(POWER_DISTRIBUTION).o
 PROJ_OBJ += collision_avoidance.o health.o
 
@@ -394,6 +397,7 @@ endif
 
 all: bin/ bin/dep bin/vendor check_submodules build
 build:
+
 # Each target is in a different line, so they are executed one after the other even when the processor has multiple cores (when the -j option for the make command is > 1). See: https://www.gnu.org/software/make/manual/html_node/Parallel.html
 	@$(MAKE) --no-print-directory clean_version CRAZYFLIE_BASE=$(CRAZYFLIE_BASE)
 	@$(MAKE) --no-print-directory compile CRAZYFLIE_BASE=$(CRAZYFLIE_BASE)
