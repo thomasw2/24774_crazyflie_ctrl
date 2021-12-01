@@ -3,6 +3,7 @@
 
 #include "cfassert.h"
 #include "controller.h"
+#include "controller_lqr.h"
 #include "controller_pid.h"
 #include "controller_mellinger.h"
 #include "controller_indi.h"
@@ -21,6 +22,7 @@ typedef struct {
 
 static ControllerFcns controllerFunctions[] = {
   {.init = 0, .test = 0, .update = 0, .name = "None"}, // Any
+  {.init = controllerLQRInit, .test = controllerLQRTest, .update = controllerLQR, .name = "LQR"},
   {.init = controllerPidInit, .test = controllerPidTest, .update = controllerPid, .name = "PID"},
   {.init = controllerMellingerInit, .test = controllerMellingerTest, .update = controllerMellinger, .name = "Mellinger"},
   {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"},
@@ -43,6 +45,8 @@ void controllerInit(ControllerType controller) {
     DEBUG_PRINT("Controller type forced\n");
     currentController = forcedController;
   }
+
+  currentController = ControllerTypeLQR;
 
   initController();
 
