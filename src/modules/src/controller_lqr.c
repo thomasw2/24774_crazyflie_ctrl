@@ -1,3 +1,6 @@
+#define DEBUG_MODULE "LQR"
+#include "debug.h"
+
 
 #include "stabilizer.h"
 #include "stabilizer_types.h"
@@ -6,7 +9,6 @@
 #include "sensfusion6.h"
 #include "position_controller.h"
 #include "controller_lqr.h"
-#include "debug.h"
 #include "log.h"
 #include "param.h"
 #include "math3d.h"
@@ -49,6 +51,7 @@ void controllerLQRInit(void)
 {
   attitudeControllerInit(ATTITUDE_UPDATE_DT);
   positionControllerInit();
+  DEBUG_PRINT("Initializing LQR controller\n");
 }
 
 bool controllerLQRTest(void)
@@ -79,11 +82,6 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
                                          const state_t *state,
                                          const uint32_t tick)
 {
-    //        float stateAttitudeRateRoll = radians(sensors->gyro.x);
-    //        float stateAttitudeRatePitch = -radians(sensors->gyro.y);
-    //        float stateAttitudeRateYaw = radians(sensors->gyro.z);
-
-    //DEBUG_PRINT("calling LQR control\n");
     x_d[3] = state->velocity.x;
     x_d[4] = state->velocity.y;
     x_d[5] = state->velocity.z;
@@ -101,29 +99,33 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
     }
     // Position control
     if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-        x_d[0] = state->position.x - setpoint->position.x;
-        x_d[1] = state->position.y - setpoint->position.y;
+        x_d[0] = state->position.x - 0;//setpoint->position.x;
+        x_d[1] = state->position.y - 0;//setpoint->position.y;
         x_d[2] = state->position.z - setpoint->position.z;
     }
     double sum = 0.0;
-    for(int k=0; k< 4; k++){
+    for(int k = 0; k < 4; k++){
         sum = 0.0;
-        for(int i=0; i< 12; i++){
+        for(int i = 0; i < 12; i++){
             sum += x_d[i]*K[k][i];
         }
         if(k == 0){
-            u->m1 = -sum;
+            control->m1 = sum;
         }
         else if (k == 1){
-            u->m2 = -sum;
+            control->m2 = sum;
         }
         else if (k == 2){
-            u->m3 = -sum;
+            control->m3 = sum;
         }
         else if (k == 3){
-            u->m4 = -sum;
+            control->m4 = sum;
         }
     }
+    // DEBUG_PRINT("Motor1: %d\n", 1);//control->m1);
+    // DEBUG_PRINT("Motor2: %d\n", 2);//control->m2);
+    // DEBUG_PRINT("Motor3: %d\n", 3);//control->m3);
+    // DEBUG_PRINT("Motor4: %d\n", 4);//control->m4);
 }
 
 /**
