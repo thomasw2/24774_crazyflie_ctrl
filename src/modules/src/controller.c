@@ -22,10 +22,10 @@ typedef struct {
 
 static ControllerFcns controllerFunctions[] = {
   {.init = 0, .test = 0, .update = 0, .name = "None"}, // Any
-  {.init = controllerLQRInit, .test = controllerLQRTest, .update = controllerLQR, .name = "LQR"},
   {.init = controllerPidInit, .test = controllerPidTest, .update = controllerPid, .name = "PID"},
   {.init = controllerMellingerInit, .test = controllerMellingerTest, .update = controllerMellinger, .name = "Mellinger"},
   {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"},
+  {.init = controllerLQRInit, .test = controllerLQRTest, .update = controllerLQR, .name = "LQR"}
 };
 
 
@@ -46,11 +46,12 @@ void controllerInit(ControllerType controller) {
     currentController = forcedController;
   }
 
-  currentController = ControllerTypeLQR;
+  // currentController = ControllerTypeLQR;
 
   initController();
 
   DEBUG_PRINT("Using %s (%d) controller\n", controllerGetName(), currentController);
+  DEBUG_PRINT("Working??\n");
 }
 
 ControllerType getControllerType(void) {

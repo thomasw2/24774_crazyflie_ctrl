@@ -133,10 +133,14 @@ void powerDistribution(const control_t *control)
 
 void directPowerControl(const control_t *control)
 {
-    motorsSetRatio(MOTOR_M1, 10000);
-    motorsSetRatio(MOTOR_M2, 10000);
-    motorsSetRatio(MOTOR_M3, 10000);
-    motorsSetRatio(MOTOR_M4, 10000);
+    motorsSetRatio(MOTOR_M1, control->m1*100);
+    motorsSetRatio(MOTOR_M2, control->m2*100);
+    motorsSetRatio(MOTOR_M3, control->m3*100);
+    motorsSetRatio(MOTOR_M4, control->m4*100);
+    // motorsSetRatio(MOTOR_M1, 10000);
+    // motorsSetRatio(MOTOR_M2, 10000);
+    // motorsSetRatio(MOTOR_M3, 10000);
+    // motorsSetRatio(MOTOR_M4, 10000);
 }
 
 /**

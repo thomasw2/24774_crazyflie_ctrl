@@ -169,12 +169,13 @@ void stabilizerInit(StateEstimatorType estimator)
 
   sensorsInit();
   stateEstimatorInit(estimator);
-  controllerInit(ControllerTypeAny);
+  DEBUG_PRINT("Selecting controller\n");
+  controllerInit(1);//1 is PID, 4 is LQR;//ControllerTypeAny);
   powerDistributionInit();
   collisionAvoidanceInit();
   estimatorType = getStateEstimator();
   controllerType = getControllerType();
-
+  DEBUG_PRINT("Controller Type is %d\n", controllerType);// ControllerFcns());
   STATIC_MEM_TASK_CREATE(stabilizerTask, stabilizerTask, STABILIZER_TASK_NAME, NULL, STABILIZER_TASK_PRI);
 
   isInit = true;
@@ -275,7 +276,7 @@ static void stabilizerTask(void* param)
         powerStop();
       } else {
         powerDistribution(&control);
-        //directPowerControl(&control);
+        // directPowerControl(&control);
       }
 
       // Log data to uSD card if configured

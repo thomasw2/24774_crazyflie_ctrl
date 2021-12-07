@@ -172,6 +172,10 @@ typedef struct control_s {
   int16_t pitch;
   int16_t yaw;
   float thrust;
+  uint32_t m1;
+  uint32_t m2;
+  uint32_t m3;
+  uint32_t m4;
 } control_t;
 
 typedef enum mode_e {
