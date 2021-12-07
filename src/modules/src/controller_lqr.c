@@ -10,6 +10,7 @@
 #include "log.h"
 #include "param.h"
 #include "math3d.h"
+#include "matrix_ops.h"
 //#include "ricatti_solver.h"
 
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
@@ -63,6 +64,8 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
                                          const state_t *state,
                                          const uint32_t tick)
 {
+
+
   //DEBUG_PRINT("calling LQR control\n");
   if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
     // Rate-controled YAW is moving YAW angle setpoint
@@ -115,6 +118,11 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
 
     control->yaw = -control->yaw;
 
+    //construct the stat vector from the stat input
+    float state[12]={state->position.x,state->position.y,state->position.z,\
+    state->attitude.roll,state->attitude.pitch,state->attitude.yaw,\
+    state->velocity.x,state->velocity.y,state->velocity->z,\
+    state->}
     cmd_thrust = control->thrust;
     cmd_roll = control->roll;
     cmd_pitch = control->pitch;
