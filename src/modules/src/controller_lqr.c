@@ -32,21 +32,21 @@ static float r_pitch;
 static float r_yaw;
 static float accelz;
 
-static struct {
-  uint32_t m1;
-  uint32_t m2;
-  uint32_t m3;
-  uint32_t m4;
-} motorInputs;
+// static struct {
+//   uint32_t m1;
+//   uint32_t m2;
+//   uint32_t m3;
+//   uint32_t m4;
+// } motorInputs;
 
 // uint32_t state[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-uint32_t x_dA[] = {0, 0, 0, 0, 0, 0, 0, 0};
-uint32_t x_dP[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static const uint32_t KP[4][12] ={{-61.237,        0,  43.301, -60.713,        0,  92.665,      0,  -255.2,  50,       0,  -45.116,    23.406},
+double x_dA[] = {0, 0, 0, 0, 0, 0, 0, 0};
+double x_dP[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const double KP[4][12] ={{-61.237,        0,  43.301, -60.713,        0,  92.665,      0,  -255.2,  50,       0,  -45.116,    23.406},
                                   {      0,  -61.237,  43.301,       0,  -60.713,  92.665,  255.2,       0, -50,  45.116,        0,   -23.406},
                                   { 61.237,        0,  43.301,  60.713,        0,  92.665,      0,   255.2,  50,       0,   45.116,    23.406},
                                   {      0,   61.237,  43.301,       0,   60.713,  92.665, -255.2,       0, -50, -45.116,        0,   -23.406}};
-static const uint32_t KA[4][8] = {{35.3553,    84.0058,    0.0000,      -122.4745,    50,     0.0000,      -35.1693,    23.4056},
+static const double KA[4][8] = {{35.3553,    84.0058,    0.0000,      -122.4745,    50,     0.0000,      -35.1693,    23.4056},
                                   {35.3553,    84.0058,    122.4745,    0.0000,      -50,     35.1693,     0.0000,      -23.4056},
                                   {35.3553,    84.0058,    0.00000,     122.4745,    50,      0.0000,      35.1693,     23.4056},
                                   {35.3553,    84.0058,    -122.4745,   0.0000,      -50,     -35.1693,    0.0000,      -23.4056}};
@@ -57,8 +57,8 @@ static const uint32_t KA[4][8] = {{35.3553,    84.0058,    0.0000,      -122.474
 static const double k = 2.2e-8;
 static const double b = 1e-9;
 static const double l = 0.065;//0.046;
-static const double m = 0.032;
-static const double g = 9.81;
+// static const double m = 0.032;
+// static const double g = 9.81;
 static const double hoverSpeed = 1888.72;//((m*g)/(4*k))^(0.5);
 static const double thrustTerm = 1.5e5;
 static const double torqueTerm = 5e4;//2e4;
@@ -80,26 +80,26 @@ bool controllerLQRTest(void)
   return pass;
 }
 
-static float capAngle(float angle) {
-  float result = angle;
+// static float capAngle(float angle) {
+//   float result = angle;
 
-  while (result > 180.0f) {
-    result -= 360.0f;
-  }
+//   while (result > 180.0f) {
+//     result -= 360.0f;
+//   }
 
-  while (result < -180.0f) {
-    result += 360.0f;
-  }
+//   while (result < -180.0f) {
+//     result += 360.0f;
+//   }
 
-  return result;
-}
+//   return result;
+// }
 
 void controllerLQR(control_t *control, setpoint_t *setpoint,
                                          const sensorData_t *sensors,
                                          const state_t *state,
                                          const uint32_t tick)
 {
-
+  
   // //DEBUG_PRINT("calling LQR control\n");
   // if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
   //   // Rate-controled YAW is moving YAW angle setpoint
@@ -164,12 +164,12 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         MS[k] = hoverSpeed + sum;
       }
       // Convert from Motor speeds to torques
-      Thrust    = k*(MS[0]^2 + MS[1]^2 + MS[2]^2 + MS[3]^2)*thrustTerm;
-      Torque_r  = (k*l)*(1.414)*(-MS[0]^2 - MS[1]^2 + MS[2]^2 + MS[3]^2)*torqueTerm;
-      Torque_p  = (k*l)*(1.414)*(-MS[0]^2 + MS[1]^2 + MS[2]^2 - MS[3]^2)*torqueTerm;
+      Thrust    = k*(pow(MS[0],2) + pow(MS[1],2) + pow(MS[2],2) + pow(MS[3],2))*thrustTerm;
+      Torque_r  = (k*l)*(1.414)*(-pow(MS[0],2) - pow(MS[1],2) + pow(MS[2],2) + pow(MS[3],2))*torqueTerm;
+      Torque_p  = (k*l)*(1.414)*(-pow(MS[0],2) + pow(MS[1],2) + pow(MS[2],2) - pow(MS[3],2))*torqueTerm;
       // Torque_r  = (k*l)*(-MS[0]^2 + MS[2]^2)*torqueTerm;
       // Torque_p  = (k*l)*(-MS[1]^2 + MS[3]^2)*torqueTerm;
-      Torque_y  = b*(-MS[0]^2 + MS[1]^2 - MS[2]^2 + MS[3]^2)*torqueTerm;
+      Torque_y  = b*(-pow(MS[0],2) + pow(MS[1],2) - pow(MS[2],2) + pow(MS[3],2))*torqueTerm;
     }
     else{
       // Position control
@@ -197,12 +197,12 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         MS[k] = hoverSpeed + sum;
       }
       // Convert from Motor speeds to torques
-      Thrust    = k*(MS[0]^2 + MS[1]^2 + MS[2]^2 + MS[3]^2)*thrustTerm;
-      Torque_r  = (k*l)*(1.414)*(-MS[0]^2 - MS[1]^2 + MS[2]^2 + MS[3]^2)*torqueTerm;
-      Torque_p  = (k*l)*(1.414)*(-MS[0]^2 + MS[1]^2 + MS[2]^2 - MS[3]^2)*torqueTerm;
-      // Torque_r  = (k*l)*(-MS[0]^2 + MS[2]^2)*torqueTerm;
-      // Torque_p  = (k*l)*(-MS[1]^2 + MS[3]^2)*torqueTerm;
-      Torque_y  = b*(-MS[0]^2 + MS[1]^2 - MS[2]^2 + MS[3]^2)*torqueTerm;
+      Thrust    = k*(pow(MS[0],2) + pow(MS[1],2) + pow(MS[2],2) + pow(MS[3],2))*thrustTerm;
+      Torque_r  = (k*l)*(1.414)*(-pow(MS[0],2) - pow(MS[1],2) + pow(MS[2],2) + pow(MS[3],2))*torqueTerm;
+      Torque_p  = (k*l)*(1.414)*(-pow(MS[0],2) + pow(MS[1],2) + pow(MS[2],2) - pow(MS[3],2))*torqueTerm;
+      // Torque_r  = (k*l)*(-pow(MS[0],2) + pow(MS[2],2))*torqueTerm;
+      // Torque_p  = (k*l)*(-pow(MS[1],2) + pow(MS[3],2))*torqueTerm;
+      Torque_y  = b*(-pow(MS[0],2) + pow(MS[1],2) - pow(MS[2],2) + pow(MS[3],2))*torqueTerm;
     }
 
     if (setpoint->position.z == 0.0f){
@@ -251,10 +251,10 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
 
   //   control->yaw = -control->yaw;
 
-  //   //construct the stat vector from the stat input
-  //   float state[12]={state->position.x,state->position.y,state->position.z,\
-  //   state->attitude.roll,state->attitude.pitch,state->attitude.yaw,\
-  //   state->velocity.x,state->velocity.y,state->velocity->z,\
+  //   construct the stat vector from the stat input
+  //   float state[12]={state->position.x,state->position.y,state->position.z,
+  //   state->attitude.roll,state->attitude.pitch,state->attitude.yaw,
+  //   state->velocity.x,state->velocity.y,state->velocity->z,
   //   state->}
   //   cmd_thrust = control->thrust;
   //   cmd_roll = control->roll;
