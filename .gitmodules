@@ -13,3 +13,6 @@
 [submodule "vendor/unity"]
 	path = vendor/unity
 	url = https://github.com/throwtheswitch/unity.git
+[submodule "crazyflie_ros_ws/src/24774_crazyflie_ctrl_ws"]
+	path = crazyflie_ros_ws/src/24774_crazyflie_ctrl_ws
+	url = https://github.com/thomasw2/24774_crazyflie_ctrl_ws.git
