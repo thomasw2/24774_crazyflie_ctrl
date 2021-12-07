@@ -170,7 +170,7 @@ void stabilizerInit(StateEstimatorType estimator)
   sensorsInit();
   stateEstimatorInit(estimator);
   DEBUG_PRINT("Selecting controller\n");
-  controllerInit(4);//1 is PID, 4 is LQR;//ControllerTypeAny);
+  controllerInit(1);//1 is PID, 4 is LQR;//ControllerTypeAny);
   powerDistributionInit();
   collisionAvoidanceInit();
   estimatorType = getStateEstimator();
@@ -275,8 +275,8 @@ static void stabilizerTask(void* param)
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
-        // powerDistribution(&control);
-        directPowerControl(&control);
+        powerDistribution(&control);
+        // directPowerControl(&control);
       }
 
       // Log data to uSD card if configured
