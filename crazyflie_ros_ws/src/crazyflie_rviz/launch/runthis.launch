@@ -1,0 +1,6 @@
+<launch>
+
+    <node pkg="crazyflie_rviz" type="state_tracker_node" name="tracker" output="screen" />
+    <arg name="rvizconfig" default="$(find crazyflie_rviz)/rviz/default.rviz" />
+    <node name="crazyflie_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+</launch>

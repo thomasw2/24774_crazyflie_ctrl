@@ -24,8 +24,8 @@ static ControllerFcns controllerFunctions[] = {
   {.init = 0, .test = 0, .update = 0, .name = "None"}, // Any
   {.init = controllerPidInit, .test = controllerPidTest, .update = controllerPid, .name = "PID"},
   {.init = controllerMellingerInit, .test = controllerMellingerTest, .update = controllerMellinger, .name = "Mellinger"},
-  {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"},
-  {.init = controllerLQRInit, .test = controllerLQRTest, .update = controllerLQR, .name = "LQR"}
+  {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"}//,
+  //{.init = controllerLQRInit, .test = controllerLQRTest, .update = controllerLQR, .name = "LQR"}
 };
 
 

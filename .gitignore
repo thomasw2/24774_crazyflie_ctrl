@@ -12,7 +12,7 @@ tools/make/config.mk
 cflie.*
 version.c
 tags
-
+.crazyflie_ros_ws/devel/*
 /cf2.*
 /tag.*
 *.gch
@@ -25,3 +25,7 @@ current_platform.mk
 /docs/.jekyll-metadata
 docs/.jekyll-cache
 docs/api
+crazyflie_ros_ws/.catkin_tools/*
+crazyflie_ros_ws/devel/*
+crazyflie_ros_ws/logs/*
+crazyflie_ros_ws/build/*

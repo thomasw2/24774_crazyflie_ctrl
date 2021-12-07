@@ -59,8 +59,26 @@ static bool isInit;
 static bool emergencyStop = false;
 static int emergencyStopTimeout = EMERGENCY_STOP_TIMEOUT_DISABLED;
 
-static uint32_t inToOutLatency;
+// For custom estimator
+uint32_t current_tick;
+static state_t state_kf;
+logVarId_t idUp;
+logVarId_t idLeft;
+logVarId_t idRight;
+logVarId_t idFront;
+logVarId_t idBack;
+uint16_t up;
+uint16_t left;
+uint16_t right;
+uint16_t front;
+uint16_t back;
+uint16_t up_offset;
+uint16_t left_offset;
+uint16_t right_offset;
+uint16_t front_offset;
+uint16_t back_offset;
 
+static uint32_t inToOutLatency;
 // State variables for the stabilizer
 static setpoint_t setpoint;
 static sensorData_t sensorData;
@@ -169,13 +187,12 @@ void stabilizerInit(StateEstimatorType estimator)
 
   sensorsInit();
   stateEstimatorInit(estimator);
-  DEBUG_PRINT("Selecting controller\n");
-  controllerInit(1);//1 is PID, 4 is LQR;//ControllerTypeAny);
+  controllerInit(ControllerTypeAny);
   powerDistributionInit();
   collisionAvoidanceInit();
   estimatorType = getStateEstimator();
   controllerType = getControllerType();
-  DEBUG_PRINT("Controller Type is %d\n", controllerType);// ControllerFcns());
+
   STATIC_MEM_TASK_CREATE(stabilizerTask, stabilizerTask, STABILIZER_TASK_NAME, NULL, STABILIZER_TASK_PRI);
 
   isInit = true;
@@ -228,10 +245,18 @@ static void stabilizerTask(void* param)
   }
   // Initialize tick to something else then 0
   tick = 1;
+  current_tick = tick;
 
   rateSupervisorInit(&rateSupervisorContext, xTaskGetTickCount(), M2T(1000), 997, 1003, 1);
 
   DEBUG_PRINT("Ready to fly.\n");
+
+  // For ranger deck measurements
+  idUp = logGetVarId("range", "up");
+  idLeft = logGetVarId("range", "left");
+  idRight = logGetVarId("range", "right");
+  idFront = logGetVarId("range", "front");
+  idBack = logGetVarId("range", "back");
 
   while(1) {
     // The sensor should unlock at 1kHz
@@ -253,30 +278,57 @@ static void stabilizerTask(void* param)
         controllerInit(controllerType);
         controllerType = getControllerType();
       }
-
+      
       stateEstimator(&state, tick);
+
+      if (tick==1){
+        up_offset = logGetUint(idUp);
+        left_offset = logGetUint(idLeft);
+        right_offset = logGetUint(idRight);
+        front_offset = logGetUint(idFront);
+        back_offset = logGetUint(idBack);
+        DEBUG_PRINT("front_offset: %d \n", front_offset);
+      }
+
+      up = logGetUint(idUp);
+      left = logGetUint(idLeft);
+      right = logGetUint(idRight);
+      front = logGetUint(idFront);
+      back = logGetUint(idBack);
+
+      state_kf = state;
+      state.position.x = 1.0F*state_kf.position.x + 0.0F*(0.0111F*(front-front_offset));
+      state.position.y = 1.0F*state_kf.position.y + 0.0F*(0.0111F*(left-left_offset));
+
       compressState();
+
+      if (tick-current_tick>100) {
+        DEBUG_PRINT("X range value: %.3f \n", (double)state.position.x);
+        DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
+        //DEBUG_PRINT("Front ranger-deck value: %d \n", front);
+        //DEBUG_PRINT("Left ranger-deck value: %d \n", left);
+
+        //DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
+        //DEBUG_PRINT("Z range value: %.3f \n", (double)state.position.z);
+        current_tick = tick;
+      } 
 
       commanderGetSetpoint(&setpoint, &state);
       compressSetpoint();
-
       collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, tick);
-
       controller(&control, &setpoint, &sensorData, &state, tick);
-
       checkEmergencyStopTimeout();
+      
 
-      //
       // The supervisor module keeps track of Crazyflie state such as if
       // we are ok to fly, or if the Crazyflie is in flight.
-      //
       supervisorUpdate(&sensorData);
 
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
         powerDistribution(&control);
-        // directPowerControl(&control);
+        //directPowerControl(&control);  
       }
 
       // Log data to uSD card if configured
@@ -468,7 +520,7 @@ LOG_GROUP_START(stabilizer)
 /**
  * @brief Estimated roll
  *   Note: Same as stateEstimate.roll
- */
+ */   
 LOG_ADD(LOG_FLOAT, roll, &state.attitude.roll)
 /**
  * @brief Estimated pitch
