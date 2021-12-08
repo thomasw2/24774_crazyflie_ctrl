@@ -59,31 +59,8 @@ static bool isInit;
 static bool emergencyStop = false;
 static int emergencyStopTimeout = EMERGENCY_STOP_TIMEOUT_DISABLED;
 
-// For custom estimator
-uint32_t current_tick;
-static state_t state_kf;
-logVarId_t idUp;
-logVarId_t idLeft;
-logVarId_t idRight;
-logVarId_t idFront;
-logVarId_t idBack;
-
-float32_t up;
-float32_t left;
-float32_t right;
-float32_t front;
-float32_t back;
-
-float32_t prev_up;
-float32_t prev_left;
-float32_t prev_right;
-float32_t prev_front;
-float32_t prev_back;
-
-#define ALPHA 0.05
-#define DEG2RAD 0.017455329F
-
 static uint32_t inToOutLatency;
+
 // State variables for the stabilizer
 static setpoint_t setpoint;
 static sensorData_t sensorData;
@@ -96,6 +73,41 @@ static ControllerType controllerType;
 static STATS_CNT_RATE_DEFINE(stabilizerRate, 500);
 static rateSupervisor_t rateSupervisorContext;
 static bool rateWarningDisplayed = false;
+
+// Logging Controller variables
+// static float cmd_thrust;
+static double cmd_thrust;
+static float cmd_roll;
+static float cmd_pitch;
+static float cmd_yaw;
+static float m1;
+static float m2;
+static float m3;
+static float m4;
+static float CL;
+static float x_out;
+static float y_out;
+static float z_out;
+static float dx_out;
+static float dy_out;
+static float dz_out;
+static float p_out;
+static float q_out;
+static float r_out;
+static float dp_out;
+static float dq_out;
+static float dr_out;
+static float pid_Thrust;
+static float pid_Tr;
+static float pid_Tp;
+static float pid_Ty;
+static float lqr_Thrust;
+static float lqr_Tr;
+static float lqr_Tp;
+static float lqr_Ty;
+static float debug1;
+static float debug2;
+static float debug3;
 
 static struct {
   // position - mm
@@ -192,12 +204,13 @@ void stabilizerInit(StateEstimatorType estimator)
 
   sensorsInit();
   stateEstimatorInit(estimator);
-  controllerInit(ControllerTypeAny);
+  DEBUG_PRINT("Selecting controller\n");
+  controllerInit(1);//1 is PID, 4 is LQR;//ControllerTypeAny);
   powerDistributionInit();
   collisionAvoidanceInit();
   estimatorType = getStateEstimator();
   controllerType = getControllerType();
-
+  DEBUG_PRINT("Controller Type is %d\n", controllerType);// ControllerFcns());
   STATIC_MEM_TASK_CREATE(stabilizerTask, stabilizerTask, STABILIZER_TASK_NAME, NULL, STABILIZER_TASK_PRI);
 
   isInit = true;
@@ -250,19 +263,10 @@ static void stabilizerTask(void* param)
   }
   // Initialize tick to something else then 0
   tick = 1;
-  current_tick = tick;
-
 
   rateSupervisorInit(&rateSupervisorContext, xTaskGetTickCount(), M2T(1000), 997, 1003, 1);
 
   DEBUG_PRINT("Ready to fly.\n");
-
-  // For ranger deck measurements
-  idUp = logGetVarId("range", "up");
-  idLeft = logGetVarId("range", "left");
-  idRight = logGetVarId("range", "right");
-  idFront = logGetVarId("range", "front");
-  idBack = logGetVarId("range", "back");
 
   while(1) {
     // The sensor should unlock at 1kHz
@@ -284,70 +288,66 @@ static void stabilizerTask(void* param)
         controllerInit(controllerType);
         controllerType = getControllerType();
       }
-      
+
       stateEstimator(&state, tick);
-
-      if (tick<=50){
-        prev_up += logGetUint(idUp)*0.02F;
-        prev_left += logGetUint(idLeft)*0.02F;
-        prev_right += logGetUint(idRight)*0.02F;
-        prev_front += logGetUint(idFront)*0.02F;
-        prev_back += logGetUint(idBack)*0.02F;
-      }
-      else
-      {
-        // Low-pass filter
-        up = ALPHA*logGetUint(idUp) + (1-ALPHA)*(double)prev_up;
-        left = (ALPHA*logGetUint(idLeft) + (1-ALPHA)*(double)prev_left)*cos(state.attitude.roll*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
-        right = (ALPHA*logGetUint(idRight) + (1-ALPHA)*(double)prev_right)*cos(state.attitude.roll*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
-        front = (ALPHA*logGetUint(idFront) + (1-ALPHA)*(double)prev_front)*cos(state.attitude.pitch*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
-        back = (ALPHA*logGetUint(idBack) + (1-ALPHA)*(double)prev_back)*cos(state.attitude.pitch*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
-        
-        prev_up = up;
-        prev_left = left;
-        prev_right = right;
-        prev_front = front;
-        prev_back = back;
-      }
-
-      state_kf = state;
-      state.position.x = 0.3F*state_kf.position.x + 0.7F*(0.001F*(back-front))/2.0F;
-      state.position.y = 0.3F*state_kf.position.y + 0.7F*(0.001F*(right-left))/2.0F;
-
       compressState();
-
-      if (tick-current_tick>100) {
-        // DEBUG_PRINT("X range value: %.3f \n", (double)state.position.x);
-        // DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
-        //DEBUG_PRINT("Right ranger-deck value: %.3f \n", (double)right);
-        //DEBUG_PRINT("Right ranger-deck value: %.3f \n", (double)right);
-
-        //DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
-        //DEBUG_PRINT("Z range value: %.3f \n", (double)state.position.z);
-        //DEBUG_PRINT("Roll range value: %.3f \n", (double)state.attitude.roll);
-        current_tick = tick;
-      } 
 
       commanderGetSetpoint(&setpoint, &state);
       compressSetpoint();
-      collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, tick);
-      controller(&control, &setpoint, &sensorData, &state, tick);
-      checkEmergencyStopTimeout();
-      
 
+      collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, tick);
+
+      controller(&control, &setpoint, &sensorData, &state, tick);
+
+      cmd_thrust = control.thrust;
+      cmd_roll = control.roll;
+      cmd_pitch = control.pitch;
+      cmd_yaw = control.yaw;
+      m1 = control.m1;
+      m2 = control.m2;
+      m3 = control.m3;
+      m4 = control.m4;
+      x_out = control.x;
+      y_out = control.y;
+      z_out = control.z;
+      dx_out = control.dx;
+      dy_out = control.dy;
+      dz_out = control.dz;
+      p_out = control.p;
+      q_out = control.q;
+      r_out = control.r;
+      dp_out = control.dp;
+      dq_out = control.dq;
+      dr_out = control.dr;
+      pid_Thrust = control.pid_Thrust;
+      pid_Tr = control.pid_Tr;
+      pid_Tp = control.pid_Tp;
+      pid_Ty = control.pid_Ty;
+      lqr_Thrust = control.lqr_Thrust;
+      lqr_Tr = control.lqr_Tr;
+      lqr_Tp = control.lqr_Tp;
+      lqr_Ty = control.lqr_Ty;
+      debug1 = setpoint.thrust;
+      debug2 = setpoint.attitude.roll;
+      debug3 = setpoint.attitude.yaw;
+
+      checkEmergencyStopTimeout();
+
+      //
       // The supervisor module keeps track of Crazyflie state such as if
       // we are ok to fly, or if the Crazyflie is in flight.
+      //
       supervisorUpdate(&sensorData);
 
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
         powerDistribution(&control);
-        //directPowerControl(&control);  
+        // directPowerControl(&control);
       }
 
       // Log data to uSD card if configured
-      if (   usddeckLoggingEnabled()
+      if (usddeckLoggingEnabled()
           && usddeckLoggingMode() == usddeckLoggingMode_SynchronousStabilizer
           && RATE_DO_EXECUTE(usddeckFrequency(), tick)) {
         usddeckTriggerLogging();
@@ -535,7 +535,7 @@ LOG_GROUP_START(stabilizer)
 /**
  * @brief Estimated roll
  *   Note: Same as stateEstimate.roll
- */   
+ */
 LOG_ADD(LOG_FLOAT, roll, &state.attitude.roll)
 /**
  * @brief Estimated pitch
@@ -551,6 +551,51 @@ LOG_ADD(LOG_FLOAT, yaw, &state.attitude.yaw)
  * @brief Current thrust
  */
 LOG_ADD(LOG_FLOAT, thrust, &control.thrust)
+LOG_ADD(LOG_FLOAT, m1, &m1)
+LOG_ADD(LOG_FLOAT, m2, &m2)
+LOG_ADD(LOG_FLOAT, m3, &m3)
+LOG_ADD(LOG_FLOAT, m4, &m4)
+LOG_ADD(LOG_FLOAT, x_out, &x_out)
+LOG_ADD(LOG_FLOAT, y_out, &y_out)
+LOG_ADD(LOG_FLOAT, z_out, &z_out)
+LOG_ADD(LOG_FLOAT, dx_out, &dx_out)
+LOG_ADD(LOG_FLOAT, dy_out, &dy_out)
+LOG_ADD(LOG_FLOAT, dz_out, &dz_out)
+LOG_ADD(LOG_FLOAT, p_out, &p_out)
+LOG_ADD(LOG_FLOAT, q_out, &q_out)
+LOG_ADD(LOG_FLOAT, r_out, &r_out)
+LOG_ADD(LOG_FLOAT, dp_out, &dp_out)
+LOG_ADD(LOG_FLOAT, dq_out, &dq_out)
+LOG_ADD(LOG_FLOAT, dr_out, &dr_out)
+LOG_ADD(LOG_FLOAT, pid_Thrust, &pid_Thrust)
+LOG_ADD(LOG_FLOAT, pid_Tr, &pid_Tr)
+LOG_ADD(LOG_FLOAT, pid_Tp, &pid_Tp)
+LOG_ADD(LOG_FLOAT, pid_Ty, &pid_Ty)
+LOG_ADD(LOG_FLOAT, lqr_Thrust, &lqr_Thrust)
+LOG_ADD(LOG_FLOAT, lqr_Tr, &lqr_Tr)
+LOG_ADD(LOG_FLOAT, lqr_Tp, &lqr_Tp)
+LOG_ADD(LOG_FLOAT, lqr_Ty, &lqr_Ty)
+LOG_ADD(LOG_FLOAT, debug1, &debug1)
+LOG_ADD(LOG_FLOAT, debug2, &debug2)
+LOG_ADD(LOG_FLOAT, debug3, &debug3)
+
+// LOG_ADD(LOG_FLOAT, CL, &CL)
+/**
+ * @brief Thrust command
+ */
+LOG_ADD(LOG_FLOAT, cmd_thrust, &cmd_thrust)
+/**
+ * @brief Roll command
+ */
+LOG_ADD(LOG_FLOAT, cmd_roll, &cmd_roll)
+/**
+ * @brief Pitch command
+ */
+LOG_ADD(LOG_FLOAT, cmd_pitch, &cmd_pitch)
+/**
+ * @brief yaw command
+ */
+LOG_ADD(LOG_FLOAT, cmd_yaw, &cmd_yaw)
 /**
  * @brief Rate of stabilizer loop
  */
