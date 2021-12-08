@@ -67,16 +67,21 @@ logVarId_t idLeft;
 logVarId_t idRight;
 logVarId_t idFront;
 logVarId_t idBack;
-uint16_t up;
-uint16_t left;
-uint16_t right;
-uint16_t front;
-uint16_t back;
-uint16_t up_offset;
-uint16_t left_offset;
-uint16_t right_offset;
-uint16_t front_offset;
-uint16_t back_offset;
+
+float32_t up;
+float32_t left;
+float32_t right;
+float32_t front;
+float32_t back;
+
+float32_t prev_up;
+float32_t prev_left;
+float32_t prev_right;
+float32_t prev_front;
+float32_t prev_back;
+
+#define ALPHA 0.05
+#define DEG2RAD 0.017455329F
 
 static uint32_t inToOutLatency;
 // State variables for the stabilizer
@@ -247,6 +252,7 @@ static void stabilizerTask(void* param)
   tick = 1;
   current_tick = tick;
 
+
   rateSupervisorInit(&rateSupervisorContext, xTaskGetTickCount(), M2T(1000), 997, 1003, 1);
 
   DEBUG_PRINT("Ready to fly.\n");
@@ -281,35 +287,44 @@ static void stabilizerTask(void* param)
       
       stateEstimator(&state, tick);
 
-      if (tick==1){
-        up_offset = logGetUint(idUp);
-        left_offset = logGetUint(idLeft);
-        right_offset = logGetUint(idRight);
-        front_offset = logGetUint(idFront);
-        back_offset = logGetUint(idBack);
-        DEBUG_PRINT("front_offset: %d \n", front_offset);
+      if (tick<=50){
+        prev_up += logGetUint(idUp)*0.02F;
+        prev_left += logGetUint(idLeft)*0.02F;
+        prev_right += logGetUint(idRight)*0.02F;
+        prev_front += logGetUint(idFront)*0.02F;
+        prev_back += logGetUint(idBack)*0.02F;
+      }
+      else
+      {
+        // Low-pass filter
+        up = ALPHA*logGetUint(idUp) + (1-ALPHA)*(double)prev_up;
+        left = (ALPHA*logGetUint(idLeft) + (1-ALPHA)*(double)prev_left)*cos(state.attitude.roll*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
+        right = (ALPHA*logGetUint(idRight) + (1-ALPHA)*(double)prev_right)*cos(state.attitude.roll*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
+        front = (ALPHA*logGetUint(idFront) + (1-ALPHA)*(double)prev_front)*cos(state.attitude.pitch*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
+        back = (ALPHA*logGetUint(idBack) + (1-ALPHA)*(double)prev_back)*cos(state.attitude.pitch*DEG2RAD)*cos(state.attitude.yaw*DEG2RAD);
+        
+        prev_up = up;
+        prev_left = left;
+        prev_right = right;
+        prev_front = front;
+        prev_back = back;
       }
 
-      up = logGetUint(idUp);
-      left = logGetUint(idLeft);
-      right = logGetUint(idRight);
-      front = logGetUint(idFront);
-      back = logGetUint(idBack);
-
       state_kf = state;
-      state.position.x = 1.0F*state_kf.position.x + 0.0F*(0.0111F*(front-front_offset));
-      state.position.y = 1.0F*state_kf.position.y + 0.0F*(0.0111F*(left-left_offset));
+      state.position.x = 0.3F*state_kf.position.x + 0.7F*(0.001F*(back-front))/2.0F;
+      state.position.y = 0.3F*state_kf.position.y + 0.7F*(0.001F*(right-left))/2.0F;
 
       compressState();
 
       if (tick-current_tick>100) {
-        DEBUG_PRINT("X range value: %.3f \n", (double)state.position.x);
-        DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
-        //DEBUG_PRINT("Front ranger-deck value: %d \n", front);
-        //DEBUG_PRINT("Left ranger-deck value: %d \n", left);
+        // DEBUG_PRINT("X range value: %.3f \n", (double)state.position.x);
+        // DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
+        //DEBUG_PRINT("Right ranger-deck value: %.3f \n", (double)right);
+        //DEBUG_PRINT("Right ranger-deck value: %.3f \n", (double)right);
 
         //DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
         //DEBUG_PRINT("Z range value: %.3f \n", (double)state.position.z);
+        //DEBUG_PRINT("Roll range value: %.3f \n", (double)state.attitude.roll);
         current_tick = tick;
       } 
 

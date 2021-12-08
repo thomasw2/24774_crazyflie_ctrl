@@ -136,7 +136,7 @@ static void mrTask(void *param)
 		double right = mrGetMeasurementAndRestart(&devRight)/1000.0f;
 
 		//DEBUG_PRINT("ranges %f %f %f %f %f \n", front,back,up,left,right);
-	DEBUG_PRINT("ranges l:%f r:%f u:%f\n", left, right,up);
+	    //DEBUG_PRINT("ranges l:%f r:%f u:%f\n", left, right,up);
         rangeSet(rangeFront, front);
         rangeSet(rangeBack, back);
         rangeSet(rangeUp, up);
