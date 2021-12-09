@@ -84,7 +84,7 @@ static float m1;
 static float m2;
 static float m3;
 static float m4;
-static float CL;
+//static float CL;
 static float x_out;
 static float y_out;
 static float z_out;
@@ -205,7 +205,7 @@ void stabilizerInit(StateEstimatorType estimator)
   sensorsInit();
   stateEstimatorInit(estimator);
   DEBUG_PRINT("Selecting controller\n");
-  controllerInit(1);//1 is PID, 4 is LQR;//ControllerTypeAny);
+  controllerInit(4);//1 is PID, 4 is LQR;//ControllerTypeAny);
   powerDistributionInit();
   collisionAvoidanceInit();
   estimatorType = getStateEstimator();

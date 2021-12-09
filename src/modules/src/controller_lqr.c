@@ -27,21 +27,27 @@ static float r_pitch;
 static float r_yaw;
 static float accelz;
 
-static struct {
-  float m1;
-  float m2;
-  float m3;
-  float m4;
-} motorInputs;
+// static struct {
+//   float m1;
+//   float m2;
+//   float m3;
+//   float m4;
+// } motorInputs;
 
 // uint32_t state[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // uint32_t x_dA[] = {0, 0, 0, 0, 0, 0, 0, 0};
 static float x_dP[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+//Gain Matrix with values: [1....]
+static const float KP[4][12] = {{0.0000, 0.0000, 0.0002, 0.0000, -0.0000, -0.0002, 0.0000, -0.0000, 0.3861, 0.0000, 0.0000, 0.0000},
+{0.0000, 0.0015, 0.0000, 0.0000, 0.0000, -0.0000, 0.0015, 0.0000, 0.0000, 0.0000, -0.0000, 0.0005},
+{0.0000, 0.0000, 0.0003, -0.0000, -0.0000, -0.0003, -0.0000, -0.0000, 0.4169, 0.0000, -0.0000, 0.0000},
+{0.0000, 0.0003, 0.0000, 0.0000, 0.0000, -0.0000, 0.0003, -0.0000, 0.0000, 0.0000, 0.0000, 0.0006}};
+
 // Gain Matrix with values: [0.001  0.001  1  0.001  0.001  0.001  5  5  5  0.001  0.001  0.001]
-static const float KP[4][12] = {{-0.5000, 0.5000, 0.5000, -0.5000, 0.5000, 0.5000, -0.5000, -0.5000, 15.8114, 15.8114, 15.8114, 15.8114},
-                                   {-2.1091, 2.1091, 2.1091, -2.1091, 2.1091, 2.1091, -2.1091, -2.1091, 55.1763, 55.1763, 55.1763, 55.1763},
-                                   {-41.1865, -41.1865, 41.1865, 41.1865, -41.1865, 41.1865, 41.1865, -41.1865, 35.3553, -35.3553, 35.3553, -35.3553},
-                                   {-11.1423, -11.1423, 11.1423, 11.1423, -11.1423, 11.1423, 11.1423, -11.1423, 14.5204, -14.5204, 14.5204, -14.5204}};
+// static const float KP[4][12] = {{-0.5000, 0.5000, 0.5000, -0.5000, 0.5000, 0.5000, -0.5000, -0.5000, 15.8114, 15.8114, 15.8114, 15.8114},
+//                                    {-2.1091, 2.1091, 2.1091, -2.1091, 2.1091, 2.1091, -2.1091, -2.1091, 55.1763, 55.1763, 55.1763, 55.1763},
+//                                    {-41.1865, -41.1865, 41.1865, 41.1865, -41.1865, 41.1865, 41.1865, -41.1865, 35.3553, -35.3553, 35.3553, -35.3553},
+//                                    {-11.1423, -11.1423, 11.1423, 11.1423, -11.1423, 11.1423, 11.1423, -11.1423, 14.5204, -14.5204, 14.5204, -14.5204}};
 
 // Gain Matrix with values: [0.001  0.001  5  0.001  0.001  0.001  50  50  50  0.001  0.001  0.001]
 // static const float KP[4][12] = {{-0.5000, 0.5000, 0.5000, -0.5000, 0.5000, 0.5000, -0.5000, -0.5000, 35.3553, 35.3553, 35.3553, 35.3553},
@@ -84,15 +90,15 @@ static const float KP[4][12] = {{-0.5000, 0.5000, 0.5000, -0.5000, 0.5000, 0.500
 //                                   {35.3553,    84.0058,    0.00000,     122.4745,    50,      0.0000,      35.1693,     23.4056},
 //                                   {35.3553,    84.0058,    -122.4745,   0.0000,      -50,     -35.1693,    0.0000,      -23.4056}};
 
-static const float k = 2.2e-8;           // kg*m/rad2
-static const float b = 1e-9;             // 
-static const float l = 0.046;            // m
+//static const float k = 2.2e-8;           // kg*m/rad2
+//static const float b = 1e-9;             // 
+//static const float l = 0.046;            // m
 static const float m = 0.032;            // kg
 static const float g = 9.81;             // m/s2
-static const float hoverSpeed = 1888;//powf((m*g)/(4*k), 0.5);
-static const float motorConversion = 5.5593;
-static const float torqueTerm = 5e4;//2.8696e6;//5e4;
-static const float thrustTerm = 132000;
+//static const float hoverSpeed = 1888;//powf((m*g)/(4*k), 0.5);
+//static const float motorConversion = 5.5593;
+//static const float torqueTerm = 5e4;//2.8696e6;//5e4;
+//static const float thrustTerm = 132000;
 
 
 void controllerLQRInit(void)
@@ -130,7 +136,7 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
                                          const state_t *state,
                                          const uint32_t tick)
 {
-    float MS[] = {0, 0, 0, 0};
+    float input[] = {0, 0, 0, 0};
     double Thrust = 0;
     float Torque_r = 0;
     float Torque_p = 0;
@@ -140,8 +146,8 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
     }
     else{
       if (setpoint->mode.x == modeAbs || setpoint->mode.y == modeAbs || setpoint->mode.z == modeAbs) {
-        float x = state->position.x;
-        float y = state->position.y;
+        //float x = state->position.x;
+        //float y = state->position.y;
         float roll = radians(capAngle(state->attitude.roll));    //--> try body frame for dr, dp, dy
         float pitch = -radians(capAngle(state->attitude.pitch));
         float yaw = radians(capAngle(state->attitude.yaw));
@@ -205,23 +211,27 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
             sum += x_dP[i]*KP[k][i];
           }
           // MS[k] = (sum);//*motorConversion;
-          MS[k] = (hoverSpeed - sum);//*motorConversion;
+          input[k] = - sum;//*motorConversion;
         }
-        control->m1 = MS[0];
-        control->m2 = MS[1];
-        control->m3 = MS[2];
-        control->m4 = MS[3];
+        input[0]=input[0]+m*g;//feedforward term
+        // control->m1 = input[0];
+        // control->m2 = input[1];
+        // control->m3 = input[2];
+        // control->m4 = input[3];
 
         // Convert Motor speeds to torques
-        Thrust    = k*(powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*thrustTerm;                  // Thrust - Newtons (kg*m/rad2)
-        Torque_r  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*torqueTerm;  // Newton * m
-        Torque_p  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;  // Newton * m
-        Torque_y  = b*(powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;
-
-        control->thrust = Thrust;
-        control->roll = Torque_r;
-        control->pitch = Torque_p;
-        control->yaw = Torque_y;
+        // Thrust    = k*(powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*thrustTerm;                  // Thrust - Newtons (kg*m/rad2)
+        // Torque_r  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*torqueTerm;  // Newton * m
+        // Torque_p  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;  // Newton * m
+        // Torque_y  = b*(powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;
+        Thrust = input[0];
+        Torque_r = input[1];
+        Torque_p = input[2];
+        Torque_y = input[3];
+        control->thrust = Thrust*10000;
+        control->roll = Torque_r*10000;
+        control->pitch = Torque_p*10000;
+        control->yaw = Torque_y*10000;
         control->lqr_Thrust = Thrust;
         control->lqr_Tr = Torque_r;
         control->lqr_Tp = Torque_p;
