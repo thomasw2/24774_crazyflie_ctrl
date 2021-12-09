@@ -139,8 +139,8 @@ void powerDistribution(const control_t *control)
 void powerDistributionLQR(const control_t *control)
 {
   #ifdef QUAD_FORMATION_X
-    int16_t r = control->roll/ 2.0f;
-    int16_t p = control->pitch/ 2.0f;
+    int16_t r = control->roll;/// 2.0f;
+    int16_t p = control->pitch;/// 2.0f;
     //TODO: Findout why this works
 
     motorPower.m1 = limitThrust(control->thrust - r - p - control->yaw);

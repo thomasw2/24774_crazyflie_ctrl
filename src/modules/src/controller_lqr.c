@@ -56,26 +56,32 @@ static float x_dP[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.
 // {0.0000, -0.0247, 0.0000, 5.5244, 0.0000, 0.0000, 0.0000, -0.1669, 0.0000, 0.0177, 0.0000, 0.0000},
 // {0.0247, 0.0000, 0.0000, 0.0000, 5.5244, 0.0000, 0.1669, 0.0000, 0.0000, 0.0000, 0.0177, 0.0000},
 // {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 10.2808, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0337}};
-static const float KP[4][12]={{0.0000, 0.0000, 3.1171, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4574, 0.0000, 0.0000, 0.0000},
-{0.0000, -0.0046, 0.0000, 0.1250, 0.0000, 0.0000, 0.0000, -0.0180, 0.0000, 0.0147, 0.0000, 0.0000},
-{0.0046, 0.0000, 0.0000, 0.0000, 0.1250, 0.0000, 0.0180, 0.0000, 0.0000, 0.0000, 0.0147, 0.0000},
-{0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.2003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0286}};
+// static const float KP[4][12]={{0.0000, 0.0000, 3.1171, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4574, 0.0000, 0.0000, 0.0000},
+// {0.0000, -0.0046, 0.0000, 0.1250, 0.0000, 0.0000, 0.0000, -0.0180, 0.0000, 0.0147, 0.0000, 0.0000},
+// {0.0046, 0.0000, 0.0000, 0.0000, 0.1250, 0.0000, 0.0180, 0.0000, 0.0000, 0.0000, 0.0147, 0.0000},
+// {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.2003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0286}};
+static const float KP[4][12]={{0.0000, 0.0000, 3.1623, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4609, 0.0000, 0.0000, 0.0000},
+{0.0000, -3.1623, 0.0000, 86.3003, 0.0000, 0.0000, 0.0000, -12.4755, 0.0000, 10.0002, 0.0000, 0.0000},
+{3.1623, 0.0000, 0.0000, 0.0000, 86.3003, 0.0000, 12.4755, 0.0000, 0.0000, 0.0000, 10.0002, 0.0000},
+{0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 70.7107, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 10.0003}};
+
+
 //static const float k = 2.2e-8;           // kg*m/rad2
 //static const float b = 1e-9;             // 
 //static const float l = 0.03252;            // m
-static const float m = 0.032;            // kg
+static const float m = 0.04;//0.032;            // kg
 static const float g = 9.81;             // m/s2
 //static const float hoverSpeed = 1888;//powf((m*g)/(4*k), 0.5);
 //static const float motorConversion = 5.5593;
 // static const float thrustTerm = 132000.9*4;
-static const float thrustTerm = 132000.9;
-// static const float torqueTerm = 6154.0;//2.8696e6;//5e4;615400
-  static const float torqueTerm = 6154.0;
+// static const float thrustTerm = 132000.9;
+// // static const float torqueTerm = 6154.0;//2.8696e6;//5e4;615400
+//   static const float torqueTerm = 6154.0;
 
 static const float l = 0.03252;
-static const float thrustTerm = 132000.9*4;
-static const float torqueTerm_rp = thrustTerm*l;
-static const float torqueTerm_y = thrustTerm*0.006;
+static const float thrustTerm = 435566.0f;//132000.9*4;
+static const float torqueTerm_rp = thrustTerm/l;
+static const float torqueTerm_y = thrustTerm*0.006f;
 
 
 void controllerLQRInit(void)
@@ -171,20 +177,16 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         //experimental
 
         control->m1 = clamp(MS[0]*thrustTerm/4.0f,0,65000);
-        control->m2 = clamp(MS[1]*torqueTerm_rp/4.0f,-32000,32000);
-        control->m3 = clamp(MS[2]*torqueTerm_rp/4.0f,-32000,32000);
-        control->m4 = clamp(MS[3]*torqueTerm_y/4.0f,-32000,32000);
+        control->m2 = clamp(cr*MS[1]*torqueTerm_rp/4.0f,-32000,32000);
+        control->m3 = clamp(cp*MS[2]*torqueTerm_rp/4.0f,-32000,32000);
+        control->m4 = clamp(cy*MS[3]*torqueTerm_y/4.0f,-32000,32000);
 
         // Convert Motor speeds to torques
         // Thrust    = k*(powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*thrustTerm;                  // Thrust - Newtons (kg*m/rad2)
         // Torque_r  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*torqueTerm;  // Newton * m
         // Torque_p  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;  // Newton * m
         // Torque_y  = b*(powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;
-        Thrust = MS[0];
-        //Thrust = 0.000001;
-        Torque_r = MS[1];
-        Torque_p = MS[2];
-        Torque_y = MS[3];
+
         // if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
         //   DEBUG_PRINT("T:%4.4f taux:%4.4f tauy:%4.4f tauz:%4.4f\n",
         //     (double)MS[0],(double)MS[1],(double)MS[2],(double)MS[3]);
