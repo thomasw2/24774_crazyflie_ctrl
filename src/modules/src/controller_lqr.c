@@ -1,10 +1,7 @@
 #define DEBUG_MODULE "LQR"
 #include "debug.h"
-
-
 #include "stabilizer.h"
 #include "stabilizer_types.h"
-
 #include "attitude_controller.h"
 #include "sensfusion6.h"
 #include "position_controller.h"
@@ -12,7 +9,6 @@
 #include "log.h"
 #include "param.h"
 #include "math3d.h"
-//#include "ricatti_solver.h"
 
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
 
@@ -27,61 +23,19 @@ static float r_pitch;
 static float r_yaw;
 static float accelz;
 
-// static struct {
-//   float m1;
-//   float m2;
-//   float m3;
-//   float m4;
-// } motorInputs;
-
-// uint32_t state[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// uint32_t x_dA[] = {0, 0, 0, 0, 0, 0, 0, 0};
 static float x_dP[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-//Gain Matrix with values: [1....]
-// static const float KP[4][12] = {{-0.0000, -0.0000, 0.0145, -0.0000, -0.0000, -0.0145, 0.0000, -0.0000, 14.7655, 0.0000, -0.0000, 0.0000},
-// {0.0000, 0.0791, -0.0000, 0.0000, -0.0000, -0.0000, 0.0791, 0.0000, 0.0000, 0.0000, 0.0000, 0.0285},
-// {-0.0000, -0.0000, 0.0211, -0.0000, -0.0000, -0.0211, -0.0000, -0.0000, 14.7975, 0.0000, -0.0000, 0.0000},
-// {0.0000, 0.0146, -0.0000, 0.0000, 0.0000, -0.0000, 0.0146, 0.0000, -0.0000, 0.0000, 0.0000, 0.0285}};
-//Gain Matrix with values: [1 1 1 0.01 0.01 0.01 15 15 1 0.01 0.01 0.01]
-
-// static const float KP[4][12] = {{-0.0000, 0.0000, 0.1418, -0.0000, -0.0000, -0.1418, -0.0000, -0.0000, 14.7655, -0.0000, 0.0000, 0.0000},
-// {0.0000, 0.4035, -0.0000, 0.0000, 0.0000, -0.0000, 0.4035, -0.0000, -0.0000, 0.0000, -0.0000, 0.0285},
-// {-0.0000, -0.0000, 0.5597, 0.0000, -0.0000, -0.5597, 0.0000, -0.0000, 14.7975, -0.0000, 0.0000, 0.0000},
-// {0.0000, 0.0148, -0.0000, 0.0000, 0.0000, -0.0000, 0.0148, -0.0000, -0.0000, 0.0000, -0.0000, 0.0285}};
-//
-//Gain Matrix with values: [1 1 1 0.01 0.01 0.01 1 1 15 0.01 0.01 0.01]
-//q=[1, 1, 1, 50, 50, 10, 0.0001, 0.0001, 0.0001, 1, 1, 1]
-
-// static const float KP[4][12]={{0.0000, 0.0000, 0.3145, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.1733, 0.0000, 0.0000, 0.0000},
-// {0.0000, -0.0247, 0.0000, 5.5244, 0.0000, 0.0000, 0.0000, -0.1669, 0.0000, 0.0177, 0.0000, 0.0000},
-// {0.0247, 0.0000, 0.0000, 0.0000, 5.5244, 0.0000, 0.1669, 0.0000, 0.0000, 0.0000, 0.0177, 0.0000},
-// {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 10.2808, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0337}};
-// static const float KP[4][12]={{0.0000, 0.0000, 3.1171, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4574, 0.0000, 0.0000, 0.0000},
-// {0.0000, -0.0046, 0.0000, 0.1250, 0.0000, 0.0000, 0.0000, -0.0180, 0.0000, 0.0147, 0.0000, 0.0000},
-// {0.0046, 0.0000, 0.0000, 0.0000, 0.1250, 0.0000, 0.0180, 0.0000, 0.0000, 0.0000, 0.0147, 0.0000},
-// {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.2003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0286}};
 static const float KP[4][12]={{0.0000, 0.0000, 3.1623, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4609, 0.0000, 0.0000, 0.0000},
 {0.0000, -3.1623, 0.0000, 86.3003, 0.0000, 0.0000, 0.0000, -12.4755, 0.0000, 10.0002, 0.0000, 0.0000},
 {3.1623, 0.0000, 0.0000, 0.0000, 86.3003, 0.0000, 12.4755, 0.0000, 0.0000, 0.0000, 10.0002, 0.0000},
 {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 70.7107, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 10.0003}};
 
 
-//static const float k = 2.2e-8;           // kg*m/rad2
-//static const float b = 1e-9;             // 
-//static const float l = 0.03252;            // m
 static const float m = 0.04;//0.032;            // kg
 static const float g = 9.81;             // m/s2
-//static const float hoverSpeed = 1888;//powf((m*g)/(4*k), 0.5);
-//static const float motorConversion = 5.5593;
-// static const float thrustTerm = 132000.9*4;
-// static const float thrustTerm = 132000.9;
-// // static const float torqueTerm = 6154.0;//2.8696e6;//5e4;615400
-//   static const float torqueTerm = 6154.0;
-
 static const float l = 0.03252;
 static const float thrustTerm = 435566.0f;//132000.9*4;
-static const float torqueTerm_rp = thrustTerm/l;
-static const float torqueTerm_y = thrustTerm*0.006f;
+static const float torqueTerm_rp = 13393788.4379;//thrustTerm/l;
+static const float torqueTerm_y = 2613.396;//thrustTerm*0.006f;
 
 
 void controllerLQRInit(void)
@@ -130,17 +84,12 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
     }
     else{
       if (setpoint->mode.x == modeAbs || setpoint->mode.y == modeAbs || setpoint->mode.z == modeAbs) {
-        //float x = state->position.x;
-        //float y = state->position.y;
         float roll = radians(capAngle(state->attitude.roll));    //--> try body frame for dr, dp, dy
         float pitch = -radians(capAngle(state->attitude.pitch));
         float yaw = radians(capAngle(state->attitude.yaw));
         float droll =  radians(sensors->gyro.x);
         float dpitch =  radians(sensors->gyro.y);
         float dyaw =  radians(sensors->gyro.z);
-        // float p = droll;
-        // float q = dpitch;
-        // float r = dyaw;
         float p = (1.0f*droll) + sinf(roll)*tanf(pitch)*dpitch + cosf(roll)*tanf(pitch)*dyaw;
         float q = (0.0f*droll) + cosf(roll)*dpitch             - sinf(roll)*dyaw;
         float r = (0.0f*droll) + sinf(roll)/cosf(pitch)*dpitch + cosf(roll)/cosf(pitch)*dyaw;
@@ -170,7 +119,6 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
           MS[k] = -sum;//*motorConversion;
         }
         MS[0]=MS[0]+m*g;
-        //MS[0]=0.0000001;
         float cr = 1.0;
         float cp = 1.0;
         float cy = 1.0;//need to map yaw torque to motor input
@@ -181,25 +129,10 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         control->m3 = clamp(cp*MS[2]*torqueTerm_rp/4.0f,-32000,32000);
         control->m4 = clamp(cy*MS[3]*torqueTerm_y/4.0f,-32000,32000);
 
-        // Convert Motor speeds to torques
-        // Thrust    = k*(powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*thrustTerm;                  // Thrust - Newtons (kg*m/rad2)
-        // Torque_r  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*torqueTerm;  // Newton * m
-        // Torque_p  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;  // Newton * m
-        // Torque_y  = b*(powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;
-
-        // if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-        //   DEBUG_PRINT("T:%4.4f taux:%4.4f tauy:%4.4f tauz:%4.4f\n",
-        //     (double)MS[0],(double)MS[1],(double)MS[2],(double)MS[3]);
-        // }
-
-        control->thrust = control->m1;//clamp(Thrust*thrustTerm/4.0f,0,65000);
-        control->roll = control->m2;//clamp(cr*Torque_r*thrustTerm*l/2.0f,-32000,32000);
-        control->pitch = control->m3;//clamp(cp*Torque_p*thrustTerm*l/2.0f,-32000,32000);
-        control->yaw = control->m4;//clamp(cy*Torque_y*torqueTerm,-32000,32000);
-        control->lqr_Thrust = Thrust;
-        control->lqr_Tr = Torque_r;
-        control->lqr_Tp = Torque_p;
-        control->lqr_Ty = Torque_y;
+        control->thrust = control->m1;
+        control->roll = control->m2;
+        control->pitch = control->m3;
+        control->yaw = control->m4;
       }
       else{
         control->thrust = 0;
@@ -223,9 +156,7 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
       attitudeDesired.yaw = state->attitude.yaw;
     }
 
-
-
-//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////           PID           ///////////////////////////////////////////////////
   if (enable_pid){
     if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
       // Rate-controled YAW is moving YAW angle setpoint
@@ -297,10 +228,6 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
       control->roll = 0;
       control->pitch = 0;
       control->yaw = 0;
-      // control->m1 = 0;
-      // control->m2 = 0;
-      // control->m3 = 0;
-      // control->m4 = 0;
 
       attitudeControllerResetAllPID();
       positionControllerResetAllPID();
@@ -308,8 +235,7 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
       // Reset the calculated YAW angle for rate control
       attitudeDesired.yaw = state->attitude.yaw;
     }
-
-}
+  }
 }
 /**
  * Logging variables for the command and reference signals for the
