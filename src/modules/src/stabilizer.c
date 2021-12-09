@@ -76,7 +76,7 @@ static bool rateWarningDisplayed = false;
 
 // Logging Controller variables
 // static float cmd_thrust;
-static double cmd_thrust;
+static float cmd_thrust;
 static float cmd_roll;
 static float cmd_pitch;
 static float cmd_yaw;
@@ -578,7 +578,6 @@ LOG_ADD(LOG_FLOAT, lqr_Ty, &lqr_Ty)
 LOG_ADD(LOG_FLOAT, debug1, &debug1)
 LOG_ADD(LOG_FLOAT, debug2, &debug2)
 LOG_ADD(LOG_FLOAT, debug3, &debug3)
-
 // LOG_ADD(LOG_FLOAT, CL, &CL)
 /**
  * @brief Thrust command
