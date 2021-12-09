@@ -61,6 +61,9 @@ static int emergencyStopTimeout = EMERGENCY_STOP_TIMEOUT_DISABLED;
 
 // For custom estimator
 uint32_t current_tick;
+bool print_flag;
+
+
 static state_t state_kf;
 logVarId_t idUp;
 logVarId_t idLeft;
@@ -311,8 +314,10 @@ static void stabilizerTask(void* param)
       }
 
       state_kf = state;
-      state.position.x = 0.3F*state_kf.position.x + 0.7F*(0.001F*(back-front))/2.0F;
-      state.position.y = 0.3F*state_kf.position.y + 0.7F*(0.001F*(right-left))/2.0F;
+      state.position.x = 0.1F*state_kf.position.x + 0.9F*(0.001F*(back-front))/2.0F;
+      state.position.y = 0.02F*state_kf.position.y + 0.98F*(0.001F*(right-left))/2.0F;
+
+      //0.1, 0.9; 0.02, 0.98
 
       compressState();
 
@@ -326,7 +331,11 @@ static void stabilizerTask(void* param)
         //DEBUG_PRINT("Z range value: %.3f \n", (double)state.position.z);
         //DEBUG_PRINT("Roll range value: %.3f \n", (double)state.attitude.roll);
         current_tick = tick;
+        print_flag = true;
       } 
+      else {
+        print_flag = false;
+      }
 
       commanderGetSetpoint(&setpoint, &state);
       compressSetpoint();
@@ -342,7 +351,7 @@ static void stabilizerTask(void* param)
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
-        powerDistribution(&control);
+        powerDistribution(&control, print_flag);
         //directPowerControl(&control);  
       }
 
