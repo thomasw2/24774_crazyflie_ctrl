@@ -72,6 +72,12 @@ static const float thrustTerm = 132000.9;
 // static const float torqueTerm = 6154.0;//2.8696e6;//5e4;615400
   static const float torqueTerm = 6154.0;
 
+static const float l = 0.03252;
+static const float thrustTerm = 132000.9*4;
+static const float torqueTerm_rp = thrustTerm*l;
+static const float torqueTerm_y = thrustTerm*0.006;
+
+
 void controllerLQRInit(void)
 {
   attitudeControllerInit(ATTITUDE_UPDATE_DT);
@@ -146,37 +152,6 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         x_dP[9] = p;
         x_dP[10] = q;
         x_dP[11] = r;
-        // x_dP[3] = state->velocity.x;
-        // x_dP[4] = state->velocity.y;
-        // x_dP[5] = state->velocity.z;
-        // x_dP[6] = roll;
-        // x_dP[7] = pitch;
-        // x_dP[8] = yaw;
-        // x_dP[9] = p;
-        // x_dP[10] = q;
-        // x_dP[11] = r;
-
-        // control->x = roll;
-        // control->y = pitch;
-        // control->z = yaw;
-        // control->dx = ;
-        // control->dy = ;
-        // control->dz = ;
-        // control->p = p;
-        // control->q = q;
-        // control->r = r;
-        // control->x = x_dP[0];
-        // control->y = x_dP[1];
-        // control->z = x_dP[2];
-        // control->dx = x_dP[3];
-        // control->dy = x_dP[4];
-        // control->dz = x_dP[5];
-        // control->p = x_dP[6];
-        // control->q = x_dP[7];
-        // control->r = x_dP[8];
-        // control->dp = x_dP[9];
-        // control->dq = x_dP[10];
-        // control->dr = x_dP[11];
 
         // LQR
         float sum = 0.0;
@@ -190,18 +165,16 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         }
         MS[0]=MS[0]+m*g;
         //MS[0]=0.0000001;
-        float cr = 100.0;
-        float cp = 100.0;
-        float cy = 5.0;//need to map yaw torque to motor input
+        float cr = 1.0;
+        float cp = 1.0;
+        float cy = 1.0;//need to map yaw torque to motor input
         //experimental
-        // control->m1 = clamp(MS[0]*thrustTerm/4.0f,0,65000);
-        // control->m2 = clamp(cr*MS[1]*thrustTerm*l/2.0f,-32000,32000);
-        // control->m3 = clamp(cp*MS[2]*thrustTerm*l/2.0f,-32000,32000);
-        // control->m4 = clamp(cy*MS[3]*torqueTerm,-32000,32000);
-        control->m1 = clamp(MS[0]*thrustTerm,0,65000);
-        control->m2 = clamp(cr*MS[1]*torqueTerm,-32000,32000);
-        control->m3 = clamp(cp*MS[2]*torqueTerm,-32000,32000);
-        control->m4 = clamp(cy*MS[3]*torqueTerm,-32000,32000);
+
+        control->m1 = clamp(MS[0]*thrustTerm/4.0f,0,65000);
+        control->m2 = clamp(MS[1]*torqueTerm_rp/4.0f,-32000,32000);
+        control->m3 = clamp(MS[2]*torqueTerm_rp/4.0f,-32000,32000);
+        control->m4 = clamp(MS[3]*torqueTerm_y/4.0f,-32000,32000);
+
         // Convert Motor speeds to torques
         // Thrust    = k*(powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*thrustTerm;                  // Thrust - Newtons (kg*m/rad2)
         // Torque_r  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*torqueTerm;  // Newton * m
