@@ -171,11 +171,39 @@ typedef struct control_s {
   int16_t roll;
   int16_t pitch;
   int16_t yaw;
-  float thrust;
-  uint32_t m1;
-  uint32_t m2;
-  uint32_t m3;
-  uint32_t m4;
+  double thrust;
+  // float thrust;
+  // motors
+  float m1;
+  float m2;
+  float m3;
+  float m4;
+  // full state
+  float x;
+  float y;
+  float z;
+  float dx;
+  float dy;
+  float dz;
+  float p;
+  float q;
+  float r;
+  float dp;
+  float dq;
+  float dr;
+  // Thrust & torques
+  float pid_Thrust;
+  float pid_Tr;
+  float pid_Tp;
+  float pid_Ty;
+  float lqr_Thrust;
+  float lqr_Tr;
+  float lqr_Tp;
+  float lqr_Ty;
+  // Debugging
+  float debug1;
+  float debug2;
+  float debug3;
 } control_t;
 
 typedef enum mode_e {
