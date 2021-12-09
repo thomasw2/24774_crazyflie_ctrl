@@ -69,7 +69,7 @@ static control_t control;
 
 static StateEstimatorType estimatorType;
 static ControllerType controllerType;
-
+static int controller_num;
 static STATS_CNT_RATE_DEFINE(stabilizerRate, 500);
 static rateSupervisor_t rateSupervisorContext;
 static bool rateWarningDisplayed = false;
@@ -205,7 +205,8 @@ void stabilizerInit(StateEstimatorType estimator)
   sensorsInit();
   stateEstimatorInit(estimator);
   DEBUG_PRINT("Selecting controller\n");
-  controllerInit(4);//1 is PID, 4 is LQR;//ControllerTypeAny);
+  controller_num = 4;
+  controllerInit(controller_num);//1 is PID, 4 is LQR;//ControllerTypeAny);
   powerDistributionInit();
   collisionAvoidanceInit();
   estimatorType = getStateEstimator();
@@ -342,7 +343,13 @@ static void stabilizerTask(void* param)
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
-        powerDistribution(&control);
+
+        if (controller_num==4){
+          powerDistributionLQR(&control);
+        }
+        else {
+          powerDistributionLQR(&control);
+        }
         // directPowerControl(&control);
       }
 

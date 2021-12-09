@@ -84,13 +84,18 @@ void powerStop()
 void powerDistribution(const control_t *control)
 {
   #ifdef QUAD_FORMATION_X
-    int16_t r = control->roll / 2.0f;
-    int16_t p = control->pitch / 2.0f;
+    int16_t r = control->roll/ 2.0f;
+    int16_t p = control->pitch/ 2.0f;
     //TODO: Findout why this works
     motorPower.m1 = limitThrust(control->thrust - r + p + control->yaw);
     motorPower.m2 = limitThrust(control->thrust - r - p - control->yaw);
     motorPower.m3 =  limitThrust(control->thrust + r - p + control->yaw);
     motorPower.m4 =  limitThrust(control->thrust + r + p - control->yaw);
+    // motorPower.m1 = limitThrust(control->thrust - r - p - control->yaw);
+    // motorPower.m2 = limitThrust(control->thrust - r + p + control->yaw);
+    // motorPower.m3 =  limitThrust(control->thrust + r + p - control->yaw);
+    // motorPower.m4 =  limitThrust(control->thrust + r - p + control->yaw);
+
   #else // QUAD_FORMATION_NORMAL
     motorPower.m1 = limitThrust(control->thrust + control->pitch +
                                control->yaw);
@@ -130,6 +135,60 @@ void powerDistribution(const control_t *control)
     motorsSetRatio(MOTOR_M4, motorPower.m4);
   }
 }
+
+void powerDistributionLQR(const control_t *control)
+{
+  #ifdef QUAD_FORMATION_X
+    int16_t r = control->roll/ 2.0f;
+    int16_t p = control->pitch/ 2.0f;
+    //TODO: Findout why this works
+
+    motorPower.m1 = limitThrust(control->thrust - r - p - control->yaw);
+    motorPower.m2 = limitThrust(control->thrust - r + p + control->yaw);
+    motorPower.m3 =  limitThrust(control->thrust + r + p - control->yaw);
+    motorPower.m4 =  limitThrust(control->thrust + r - p + control->yaw);
+
+  #else // QUAD_FORMATION_NORMAL
+    motorPower.m1 = limitThrust(control->thrust + control->pitch +
+                               control->yaw);
+    motorPower.m2 = limitThrust(control->thrust - control->roll -
+                               control->yaw);
+    motorPower.m3 =  limitThrust(control->thrust - control->pitch +
+                               control->yaw);
+    motorPower.m4 =  limitThrust(control->thrust + control->roll -
+                               control->yaw);
+  #endif
+
+  if (motorSetEnable)
+  {
+    motorsSetRatio(MOTOR_M1, motorPowerSet.m1);
+    motorsSetRatio(MOTOR_M2, motorPowerSet.m2);
+    motorsSetRatio(MOTOR_M3, motorPowerSet.m3);
+    motorsSetRatio(MOTOR_M4, motorPowerSet.m4);
+  }
+  else
+  {
+    if (motorPower.m1 < idleThrust) {
+      motorPower.m1 = idleThrust;
+    }
+    if (motorPower.m2 < idleThrust) {
+      motorPower.m2 = idleThrust;
+    }
+    if (motorPower.m3 < idleThrust) {
+      motorPower.m3 = idleThrust;
+    }
+    if (motorPower.m4 < idleThrust) {
+      motorPower.m4 = idleThrust;
+    }
+
+    motorsSetRatio(MOTOR_M1, motorPower.m1);
+    motorsSetRatio(MOTOR_M2, motorPower.m2);
+    motorsSetRatio(MOTOR_M3, motorPower.m3);
+    motorsSetRatio(MOTOR_M4, motorPower.m4);
+  }
+}
+
+
 
 void directPowerControl(const control_t *control)
 {
