@@ -59,7 +59,6 @@ static bool isInit;
 static bool emergencyStop = false;
 static int emergencyStopTimeout = EMERGENCY_STOP_TIMEOUT_DISABLED;
 
-<<<<<<< HEAD
 // For custom estimator
 uint32_t current_tick;
 bool print_flag;
@@ -87,8 +86,6 @@ float32_t prev_back;
 #define ALPHA 0.05
 #define DEG2RAD 0.017455329F
 
-=======
->>>>>>> 11e0df8daabf7ad1f179431c2d2671af21bcfd5c
 static uint32_t inToOutLatency;
 
 // State variables for the stabilizer
@@ -319,7 +316,6 @@ static void stabilizerTask(void* param)
         controllerInit(controllerType);
         controllerType = getControllerType();
       }
-<<<<<<< HEAD
       
       stateEstimator(&state, tick);
 
@@ -351,13 +347,10 @@ static void stabilizerTask(void* param)
       state.position.y = 0.02F*state_kf.position.y + 0.98F*(0.001F*(right-left))/2.0F;
 
       //0.1, 0.9; 0.02, 0.98
-=======
->>>>>>> 11e0df8daabf7ad1f179431c2d2671af21bcfd5c
 
       stateEstimator(&state, tick);
       compressState();
 
-<<<<<<< HEAD
       if (tick-current_tick>100) {
         // DEBUG_PRINT("X range value: %.3f \n", (double)state.position.x);
         // DEBUG_PRINT("Y range value: %.3f \n", (double)state.position.y);
@@ -374,8 +367,6 @@ static void stabilizerTask(void* param)
         print_flag = false;
       }
 
-=======
->>>>>>> 11e0df8daabf7ad1f179431c2d2671af21bcfd5c
       commanderGetSetpoint(&setpoint, &state);
       compressSetpoint();
 
@@ -426,19 +417,14 @@ static void stabilizerTask(void* param)
       if (emergencyStop || (systemIsArmed() == false)) {
         powerStop();
       } else {
-<<<<<<< HEAD
-        powerDistribution(&control, print_flag);
-        // directPowerControl(&control);  
-=======
+        if (controller_num ==4){
+          powerDistributionLQR(&control, print_flag);
 
-        if (controller_num==4){
-          powerDistributionLQR(&control);
         }
-        else {
-          powerDistribution(&control);
+        else{
+          powerDistribution(&control, print_flag);
         }
-        // directPowerControl(&control);
->>>>>>> 11e0df8daabf7ad1f179431c2d2671af21bcfd5c
+        // directPowerControl(&control);  
       }
 
       // Log data to uSD card if configured
