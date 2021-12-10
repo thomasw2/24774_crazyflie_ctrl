@@ -30,8 +30,8 @@
 
 void powerDistributionInit(void);
 bool powerDistributionTest(void);
-void powerDistribution(const control_t *control);
-void powerDistributionLQR(const control_t *control);
+void powerDistribution(const control_t *control,bool print_flag);
+void powerDistributionLQR(const control_t *control,bool print_flag);
 void directPowerControl(const control_t *control);
 void powerStop();
 

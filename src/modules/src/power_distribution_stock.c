@@ -137,7 +137,7 @@ void powerDistribution(const control_t *control, bool print_flag)
   }
 }
 
-void powerDistributionLQR(const control_t *control)
+void powerDistributionLQR(const control_t *control, bool print_flag)
 {
   #ifdef QUAD_FORMATION_X
     int16_t r = control->roll;/// 2.0f;
