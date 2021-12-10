@@ -33,3 +33,5 @@ crazyflie_ros_ws/.catkin_tools/*
 crazyflie_ros_ws/devel/*
 crazyflie_ros_ws/logs/*
 crazyflie_ros_ws/build/*
+test_scripts/*
+

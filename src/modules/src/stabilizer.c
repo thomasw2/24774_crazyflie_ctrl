@@ -331,7 +331,7 @@ static void stabilizerTask(void* param)
         //DEBUG_PRINT("Z range value: %.3f \n", (double)state.position.z);
         //DEBUG_PRINT("Roll range value: %.3f \n", (double)state.attitude.roll);
         current_tick = tick;
-        print_flag = true;
+        print_flag = false;
       } 
       else {
         print_flag = false;
@@ -352,7 +352,7 @@ static void stabilizerTask(void* param)
         powerStop();
       } else {
         powerDistribution(&control, print_flag);
-        //directPowerControl(&control);  
+        // directPowerControl(&control);  
       }
 
       // Log data to uSD card if configured

@@ -3,7 +3,7 @@ import rosbag
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    bag_kf = rosbag.Bag('defcov_tile_2.bag')
+    bag_kf = rosbag.Bag('rosbags/exp1_defc_defe_tile.bag')
     pose_x_kf = []
     pose_y_kf = []
     max_points = 500
@@ -13,7 +13,9 @@ if __name__ == "__main__":
     pose_x_kf_var = np.var(pose_x_kf[0:max_points])
     pose_y_kf_var = np.var(pose_y_kf[0:max_points])
 
-    bag_rd = rosbag.Bag('pure_rd_cov.bag')
+    print(len(pose_x_kf))
+
+    bag_rd = rosbag.Bag('rosbags/pure_rd_cov.bag')
     pose_x_rd = []
     pose_y_rd = []
     for topic, msg, t in bag_rd.read_messages(topics=['/cf1/pose/']):
@@ -39,28 +41,3 @@ if __name__ == "__main__":
     print("")
     print("pose_x_rd_var", pose_x_rd_var)
     print("pose_y_rd_var", pose_y_rd_var)
-
-
-    
-
-
-
-
-
-
-
-
-
-
-    # print(len(pose_x))
-    # print(len(pose_y))
-    # print(np.var(pose_x))
-    # print(np.var(pose_y))
-
-    # plt.scatter(pose_x,pose_y)
-    # plt.show()
-
-
-
-
-
