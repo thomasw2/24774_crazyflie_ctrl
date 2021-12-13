@@ -85,29 +85,29 @@ static float m2;
 static float m3;
 static float m4;
 //static float CL;
-static float x_out;
-static float y_out;
-static float z_out;
-static float dx_out;
-static float dy_out;
-static float dz_out;
-static float p_out;
-static float q_out;
-static float r_out;
-static float dp_out;
-static float dq_out;
-static float dr_out;
-static float pid_Thrust;
-static float pid_Tr;
-static float pid_Tp;
-static float pid_Ty;
-static float lqr_Thrust;
-static float lqr_Tr;
-static float lqr_Tp;
-static float lqr_Ty;
-static float debug1;
-static float debug2;
-static float debug3;
+//static float x_out;
+// static float y_out;
+// static float z_out;
+// static float dx_out;
+// static float dy_out;
+// static float dz_out;
+// static float p_out;
+// static float q_out;
+// static float r_out;
+// static float dp_out;
+// static float dq_out;
+// static float dr_out;
+// static float pid_Thrust;
+// static float pid_Tr;
+// static float pid_Tp;
+// static float pid_Ty;
+// static float lqr_Thrust;
+// static float lqr_Tr;
+// static float lqr_Tp;
+// static float lqr_Ty;
+// static float debug1;
+// static float debug2;
+// static float debug3;
 
 static struct {
   // position - mm
@@ -308,29 +308,29 @@ static void stabilizerTask(void* param)
       m2 = control.m2;
       m3 = control.m3;
       m4 = control.m4;
-      x_out = control.x;
-      y_out = control.y;
-      z_out = control.z;
-      dx_out = control.dx;
-      dy_out = control.dy;
-      dz_out = control.dz;
-      p_out = control.p;
-      q_out = control.q;
-      r_out = control.r;
-      dp_out = control.dp;
-      dq_out = control.dq;
-      dr_out = control.dr;
-      pid_Thrust = control.pid_Thrust;
-      pid_Tr = control.pid_Tr;
-      pid_Tp = control.pid_Tp;
-      pid_Ty = control.pid_Ty;
-      lqr_Thrust = control.lqr_Thrust;
-      lqr_Tr = control.lqr_Tr;
-      lqr_Tp = control.lqr_Tp;
-      lqr_Ty = control.lqr_Ty;
-      debug1 = setpoint.thrust;
-      debug2 = setpoint.attitude.roll;
-      debug3 = setpoint.attitude.yaw;
+      // x_out = 0.0f;//control.x;
+      // y_out = 0.0f;//control.y;
+      // z_out = 0.0f;//control.z;
+      // dx_out = 0.0f;//control.dx;
+      // dy_out = 0.0f;//control.dy;
+      // dz_out = 0.0f;//control.dz;
+      // p_out = 0.0f;//control.p;
+      // q_out = 0.0f;//control.q;
+      // r_out = 0.0f;//control.r;
+      // dp_out = 0.0f;//control.dp;
+      // dq_out = 0.0f;//control.dq;
+      // dr_out = 0.0f;//control.dr;
+      // pid_Thrust = control.pid_Thrust;
+      // pid_Tr = control.pid_Tr;
+      // pid_Tp = control.pid_Tp;
+      // pid_Ty = control.pid_Ty;
+      // lqr_Thrust = control.lqr_Thrust;
+      // lqr_Tr = control.lqr_Tr;
+      // lqr_Tp = control.lqr_Tp;
+      // lqr_Ty = control.lqr_Ty;
+      // debug1 = setpoint.thrust;
+      // debug2 = setpoint.attitude.roll;
+      // debug3 = setpoint.attitude.yaw;
 
       checkEmergencyStopTimeout();
 
@@ -558,34 +558,34 @@ LOG_ADD(LOG_FLOAT, yaw, &state.attitude.yaw)
 /**
  * @brief Current thrust
  */
-LOG_ADD(LOG_FLOAT, thrust, &control.thrust)
+// LOG_ADD(LOG_FLOAT, thrust, &control.thrust)
 LOG_ADD(LOG_FLOAT, m1, &m1)
 LOG_ADD(LOG_FLOAT, m2, &m2)
 LOG_ADD(LOG_FLOAT, m3, &m3)
 LOG_ADD(LOG_FLOAT, m4, &m4)
-LOG_ADD(LOG_FLOAT, x_out, &x_out)
-LOG_ADD(LOG_FLOAT, y_out, &y_out)
-LOG_ADD(LOG_FLOAT, z_out, &z_out)
-LOG_ADD(LOG_FLOAT, dx_out, &dx_out)
-LOG_ADD(LOG_FLOAT, dy_out, &dy_out)
-LOG_ADD(LOG_FLOAT, dz_out, &dz_out)
-LOG_ADD(LOG_FLOAT, p_out, &p_out)
-LOG_ADD(LOG_FLOAT, q_out, &q_out)
-LOG_ADD(LOG_FLOAT, r_out, &r_out)
-LOG_ADD(LOG_FLOAT, dp_out, &dp_out)
-LOG_ADD(LOG_FLOAT, dq_out, &dq_out)
-LOG_ADD(LOG_FLOAT, dr_out, &dr_out)
-LOG_ADD(LOG_FLOAT, pid_Thrust, &pid_Thrust)
-LOG_ADD(LOG_FLOAT, pid_Tr, &pid_Tr)
-LOG_ADD(LOG_FLOAT, pid_Tp, &pid_Tp)
-LOG_ADD(LOG_FLOAT, pid_Ty, &pid_Ty)
-LOG_ADD(LOG_FLOAT, lqr_Thrust, &lqr_Thrust)
-LOG_ADD(LOG_FLOAT, lqr_Tr, &lqr_Tr)
-LOG_ADD(LOG_FLOAT, lqr_Tp, &lqr_Tp)
-LOG_ADD(LOG_FLOAT, lqr_Ty, &lqr_Ty)
-LOG_ADD(LOG_FLOAT, debug1, &debug1)
-LOG_ADD(LOG_FLOAT, debug2, &debug2)
-LOG_ADD(LOG_FLOAT, debug3, &debug3)
+// LOG_ADD(LOG_FLOAT, x_out, &x_out)
+// LOG_ADD(LOG_FLOAT, y_out, &y_out)
+// LOG_ADD(LOG_FLOAT, z_out, &z_out)
+// LOG_ADD(LOG_FLOAT, dx_out, &dx_out)
+// LOG_ADD(LOG_FLOAT, dy_out, &dy_out)
+// LOG_ADD(LOG_FLOAT, dz_out, &dz_out)
+// LOG_ADD(LOG_FLOAT, p_out, &p_out)
+// LOG_ADD(LOG_FLOAT, q_out, &q_out)
+// LOG_ADD(LOG_FLOAT, r_out, &r_out)
+// LOG_ADD(LOG_FLOAT, dp_out, &dp_out)
+// LOG_ADD(LOG_FLOAT, dq_out, &dq_out)
+// LOG_ADD(LOG_FLOAT, dr_out, &dr_out)
+// LOG_ADD(LOG_FLOAT, pid_Thrust, &pid_Thrust)
+// LOG_ADD(LOG_FLOAT, pid_Tr, &pid_Tr)
+// LOG_ADD(LOG_FLOAT, pid_Tp, &pid_Tp)
+// LOG_ADD(LOG_FLOAT, pid_Ty, &pid_Ty)
+// LOG_ADD(LOG_FLOAT, lqr_Thrust, &lqr_Thrust)
+// LOG_ADD(LOG_FLOAT, lqr_Tr, &lqr_Tr)
+// LOG_ADD(LOG_FLOAT, lqr_Tp, &lqr_Tp)
+// LOG_ADD(LOG_FLOAT, lqr_Ty, &lqr_Ty)
+// LOG_ADD(LOG_FLOAT, debug1, &debug1)
+// LOG_ADD(LOG_FLOAT, debug2, &debug2)
+// LOG_ADD(LOG_FLOAT, debug3, &debug3)
 // LOG_ADD(LOG_FLOAT, CL, &CL)
 /**
  * @brief Thrust command

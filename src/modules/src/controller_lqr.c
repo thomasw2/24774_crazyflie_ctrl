@@ -24,24 +24,32 @@ static float r_yaw;
 static float accelz;
 
 static float x_dP[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-// static const float KP[4][12]={{0.0000, 0.0000, 3.1623, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4609, 0.0000, 0.0000, 0.0000},
-//                               {0.0000, -3.1623, 0.0000, 86.3003, 0.0000, 0.0000, 0.0000, -12.4755, 0.0000, 10.0002, 0.0000, 0.0000},
-//                               {3.1623, 0.0000, 0.0000, 0.0000, 86.3003, 0.0000, 12.4755, 0.0000, 0.0000, 0.0000, 10.0002, 0.0000},
-//                               {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 70.7107, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 10.0003}};
 
-// works decent
-static const float KP[4][12] = {{0.0000, 0.0000, 3.1171, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4574, 0.0000, 0.0000, 0.0000},
-                                {0.0000, -0.0046, 0.0000, 0.1250, 0.0000, 0.0000, 0.0000, -0.0180, 0.0000, 0.0147, 0.0000, 0.0000},
-                                {0.0046, 0.0000, 0.0000, 0.0000, 0.1250, 0.0000, 0.0180, 0.0000, 0.0000, 0.0000, 0.0147, 0.0000},
-                                {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.2003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0286}};
+//Semi-working LQR!!!
+// static const float KP[4][12]={{0.0000, -0.0000, 2.0962, 0.0000, 0.0000, -0.0000, 0.0000, 0.0000, 0.3794, 0.0000, 0.0000, 0.0000},
+// {-0.0000, -0.0084, -0.0000, 0.0522, -0.0000, -0.0000, -0.0000, -0.0095, -0.0000, 0.0146, 0.0000, 0.0000},
+// {0.0084, 0.0000, -0.0000, -0.0000, 0.0522, -0.0000, 0.0095, 0.0000, 0.0000, 0.0000, 0.0146, -0.0000},
+// {-0.0000, -0.0000, -0.0000, -0.0000, -0.0000, 0.2222, -0.0000, 0.0000, -0.0000, 0.0000, -0.0000, 0.0285}};
+//better gains
+// static const float KP[4][12]={{-0.0000, -0.0000, 2.0894, 0.0000, -0.0000, -0.0000, -0.0000, -0.0000, 0.4804, 0.0000, -0.0000, 0.0000},
+// {0.0000, -0.0471, 0.0000, 0.0928, -0.0000, 0.0000, 0.0000, -0.0300, 0.0000, 0.0146, -0.0000, -0.0000},
+// {0.0624, 0.0000, 0.0000, -0.0000, 0.1022, 0.0000, 0.0364, 0.0000, -0.0000, 0.0000, 0.0146, -0.0000},
+// {-0.0000, -0.0000, -0.0000, 0.0000, -0.0000, 0.1139, -0.0000, -0.0000, -0.0000, -0.0000, -0.0000, 0.0281}};
+static const float KP[4][12]={{-0.0000, 0.0000, 2.0496, -0.0000, -0.0000, 0.0000, -0.0000, 0.0000, 1.0761, 0.0000, -0.0000, -0.0000},
+                              {-0.0000, -0.0471, -0.0000, 0.1041, -0.0000, 0.0000, -0.0000, -0.0378, -0.0000, 0.0146, -0.0000, 0.0000},
+                              {0.0623, 0.0000, -0.0000, -0.0000, 0.1109, -0.0000, 0.0428, 0.0000, -0.0000, -0.0000, 0.0146, -0.0000},
+                              {-0.0000, -0.0000, 0.0000, 0.0000, -0.0000, 0.1139, -0.0000, -0.0000, 0.0000, 0.0000, -0.0000, 0.0281}};
+
 
 static const float m = 0.04;//0.032;            // kg
 static const float g = 9.81;             // m/s2
 static const float l = 0.03252;
 static const float thrustTerm = 435566.0f;//132000.9*4;
-static const float torqueTerm_rp = 13393788.4379;//thrustTerm/l;
-static const float torqueTerm_y = 2613.396;//thrustTerm*0.006f;
-
+static const float torqueTerm_rp = thrustTerm/l/8;
+static const float torqueTerm_y = thrustTerm*0.006f*130;
+static const float cr = 1.0;
+static const float cp = 1.0;
+static const float cy = 1.0;
 
 void controllerLQRInit(void)
 {
@@ -106,13 +114,12 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
         x_dP[3] = roll;//- setpoint->attitude.roll;
         x_dP[4] = pitch;//- setpoint->attitude.pitch;
         x_dP[5] = yaw;//- setpoint->attitude.yaw;
-        x_dP[6] = state->velocity.x;//- setpoint->velocity.x;
-        x_dP[7] = state->velocity.y;//- setpoint->velocity.y;
-        x_dP[8] = state->velocity.z;//- setpoint->velocity.z;
+        x_dP[6] = state->velocity.x- setpoint->velocity.x;
+        x_dP[7] = state->velocity.y- setpoint->velocity.y;
+        x_dP[8] = state->velocity.z- setpoint->velocity.z;
         x_dP[9] = p;
         x_dP[10] = q;
         x_dP[11] = r;
-
         // LQR
         float sum = 0.0;
         for(int k = 0; k < 4; k++){
@@ -124,20 +131,40 @@ void controllerLQR(control_t *control, setpoint_t *setpoint,
           MS[k] = -sum;//*motorConversion;
         }
         MS[0]=MS[0]+m*g;
-        float cr = 1.0;
-        float cp = 1.0;
-        float cy = 1.0;//need to map yaw torque to motor input
+
+//need to map yaw torque to motor input
         //experimental
 
-        control->m1 = clamp(MS[0]*thrustTerm/4.0f,0,65000);
-        control->m2 = clamp(cr*MS[1]*torqueTerm_rp/4.0f,-32000,32000);
-        control->m3 = clamp(cp*MS[2]*torqueTerm_rp/4.0f,-32000,32000);
-        control->m4 = clamp(cy*MS[3]*torqueTerm_y/4.0f,-32000,32000);
+        Thrust =clamp(MS[0]*thrustTerm/4.0f,0,65000);
+        Torque_r= clamp(cr*MS[1]*torqueTerm_rp/8.0f,-32000,32000);
+        Torque_p =clamp(cp*MS[2]*torqueTerm_rp/8.0f,-32000,32000);
+        Torque_y = clamp(cy*MS[3]*torqueTerm_y/4.0f,-32000,32000);
 
-        control->thrust = control->m1;
-        control->roll = control->m2;
-        control->pitch = control->m3;
-        control->yaw = control->m4;
+        
+        control->m1 = x_dP[0];//Thrust;
+        control->m2 = x_dP[6];//Torque_r;
+        control->m3 = setpoint->position.x;//Torque_p;
+        control->m4 = setpoint->velocity.x;//Torque_y;
+
+        // Convert Motor speeds to torques
+        // Thrust    = k*(powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*thrustTerm;                  // Thrust - Newtons (kg*m/rad2)
+        // Torque_r  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) + powf(MS[3], 2.0))*torqueTerm;  // Newton * m
+        // Torque_p  = ((k*l)/(1.414f))*(-powf(MS[0], 2.0) + powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;  // Newton * m
+        // Torque_y  = b*(powf(MS[0], 2.0) - powf(MS[1], 2.0) + powf(MS[2], 2.0) - powf(MS[3], 2.0))*torqueTerm;
+
+        // if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
+        //   DEBUG_PRINT("T:%4.4f taux:%4.4f tauy:%4.4f tauz:%4.4f\n",
+        //     (double)MS[0],(double)MS[1],(double)MS[2],(double)MS[3]);
+        // }
+
+        control->thrust = Thrust;//clamp(Thrust*thrustTerm/4.0f,0,65000);
+        control->roll = Torque_r;//clamp(cr*Torque_r*thrustTerm*l/2.0f,-32000,32000);
+        control->pitch = Torque_p;//clamp(cp*Torque_p*thrustTerm*l/2.0f,-32000,32000);
+        control->yaw = Torque_y;//clamp(cy*Torque_y*torqueTerm,-32000,32000);
+        control->lqr_Thrust = Thrust;
+        control->lqr_Tr = Torque_r;
+        control->lqr_Tp = Torque_p;
+        control->lqr_Ty = Torque_y;
       }
       else{
         control->thrust = 0;
