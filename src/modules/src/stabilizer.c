@@ -348,8 +348,8 @@ static void stabilizerTask(void* param)
           powerDistributionLQR(&control);
         }
         else {
-          // powerDistribution(&control);
-          powerDistributionLQR(&control);
+          powerDistribution(&control);
+          // powerDistributionLQR(&control);
         }
         // directPowerControl(&control);
       }
